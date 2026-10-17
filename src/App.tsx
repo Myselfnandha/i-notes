@@ -7,11 +7,7 @@ import {
   deleteItemApi,
   fetchNetworkInfoApi,
   getBaseApiUrl,
-  initServerConfig,
-  queueOfflineMutation,
-  processOfflineQueue,
-  getOfflineQueue,
-  checkServerHealth
+  initServerConfig
 } from './services/api';
 import { playReminderChime } from './services/audio';
 import { Header } from './components/Header';
@@ -21,7 +17,7 @@ import { ItemCard } from './components/ItemCard';
 import { ItemModal } from './components/ItemModal';
 import { SyncModal } from './components/SyncModal';
 import { ToastContainer } from './components/Toast';
-import { FileText, Clock, Link as LinkIcon, Sparkles, Home, Pin, ArrowDownUp } from 'lucide-react';
+import { FileText, Clock, Link as LinkIcon, Sparkles, Home, Pin, ArrowDownUp, Cloud } from 'lucide-react';
 import './styles/app.css';
 
 const InstagramIcon: React.FC<{ size?: number; style?: React.CSSProperties }> = ({ size = 18, style }) => (
@@ -34,7 +30,7 @@ const InstagramIcon: React.FC<{ size?: number; style?: React.CSSProperties }> = 
 
 // Device detector for presence
 function detectDeviceInfo(): DeviceInfo {
-  const ua = navigator.userAgent;
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
   let platform = 'Desktop';
   let name = 'Web Browser';
 
@@ -84,6 +80,11 @@ export const App: React.FC = () => {
     }
   });
 
+  const itemsRef = useRef<Item[]>(items);
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
   const [activeTab, setActiveTab] = useState<ItemType | 'all'>('all');
   const [activeTag, setActiveTag] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -94,7 +95,6 @@ export const App: React.FC = () => {
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
   const [connectedDevices, setConnectedDevices] = useState<DeviceInfo[]>([]);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
-  const [pendingOfflineCount, setPendingOfflineCount] = useState<number>(() => getOfflineQueue().length);
 
   // Modals
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
@@ -188,7 +188,7 @@ export const App: React.FC = () => {
       const data = await fetchNetworkInfoApi(room);
       setNetworkInfo(data);
     } catch (err) {
-      console.warn('Network info unavailable (offline or standalone):', err);
+      console.warn('Network info unavailable:', err);
     }
   }, [room]);
 
@@ -212,7 +212,7 @@ export const App: React.FC = () => {
     boot();
   }, [room, loadNetworkInfo, loadItems]);
 
-  // --- WebSocket Connection & Auto-Reconnect Engine ---
+  // --- 24/7 Cloud WebSocket Sync Engine (Zero Local Server Required) ---
   useEffect(() => {
     if (!serverReady) return;
     let isDisposed = false;
@@ -221,20 +221,15 @@ export const App: React.FC = () => {
       if (isDisposed) return;
       setSyncState((prev) => (prev === 'connected' ? 'connected' : 'connecting'));
 
-      const base = getBaseApiUrl();
-
-      // If running on a static space (*.hf.space) without a configured backend
-      if (window.location.hostname.includes('hf.space') && !base) {
-        setSyncState('offline');
-        return;
-      }
-
+      const customBase = getBaseApiUrl();
       let wsUrl = '';
-      if (base && base.startsWith('http')) {
-        wsUrl = base.replace(/^https:\/\//, 'wss://').replace(/^http:\/\//, 'ws://') + '/ws';
+
+      if (customBase && customBase.startsWith('http')) {
+        // Custom self-hosted server
+        wsUrl = customBase.replace(/^https:\/\//, 'wss://').replace(/^http:\/\//, 'ws://') + '/ws';
       } else {
-        const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        wsUrl = `${proto}//${window.location.host}/ws`;
+        // 24/7 Global Cloud Relay (Zero local server needed, free worldwide channel)
+        wsUrl = `wss://itty.ws/c/novasync_${encodeURIComponent(room).toLowerCase()}`;
       }
 
       let socket: WebSocket;
@@ -242,9 +237,11 @@ export const App: React.FC = () => {
         socket = new WebSocket(wsUrl);
         wsRef.current = socket;
 
-        socket.onopen = async () => {
+        socket.onopen = () => {
           if (isDisposed) return;
           setSyncState('connected');
+
+          // 1. Join room
           socket.send(
             JSON.stringify({
               action: 'join_room',
@@ -253,43 +250,70 @@ export const App: React.FC = () => {
             })
           );
 
-          // Test round-trip latency
+          // 2. Request state from any peer device currently online in the room
+          socket.send(
+            JSON.stringify({
+              action: 'request_state',
+              room,
+              from: deviceInfo.id
+            })
+          );
+
+          // 3. Ping for latency calculation
           pingTimestampRef.current = performance.now();
           socket.send(JSON.stringify({ action: 'ping' }));
-
-          // Process any queued offline mutations
-          const count = await processOfflineQueue((synced) => {
-            addToast('success', 'Sync Restored', `Synchronized ${synced} offline ${synced === 1 ? 'item' : 'items'} to cloud!`);
-          });
-          setPendingOfflineCount(getOfflineQueue().length);
-          if (count > 0) {
-            loadItems();
-          }
         };
 
         socket.onmessage = (event) => {
           if (isDisposed) return;
           try {
-            const msg = JSON.parse(event.data);
-            if (msg.action === 'pong') {
+            const raw = JSON.parse(event.data);
+            const msg = raw.message || raw;
+
+            if (msg.action === 'pong' || raw.type === 'pong') {
               const diff = Math.round(performance.now() - pingTimestampRef.current);
               setLatencyMs(diff);
             } else if (msg.action === 'presence_update') {
               setConnectedDevices(msg.devices || []);
+            } else if (raw.type === 'join') {
+              // itty.ws join event: update presence count
+              setConnectedDevices((prev) => {
+                if (prev.some((d) => d.id === deviceInfo.id)) return prev;
+                return [deviceInfo, ...prev];
+              });
+              // Send current state to newly joined device
+              if (itemsRef.current && itemsRef.current.length > 0) {
+                socket.send(JSON.stringify({ action: 'sync_state', room, items: itemsRef.current }));
+              }
+            } else if (msg.action === 'request_state') {
+              // A peer requested our state
+              if (itemsRef.current && itemsRef.current.length > 0) {
+                socket.send(JSON.stringify({ action: 'sync_state', room, items: itemsRef.current }));
+              }
+            } else if (msg.action === 'sync_state' && Array.isArray(msg.items)) {
+              // Reconcile and merge state with peer
+              setItems((prev) => {
+                const map = new Map<string, Item>();
+                prev.forEach((i) => map.set(i.id, i));
+                msg.items.forEach((inc: Item) => {
+                  const existing = map.get(inc.id);
+                  if (!existing || inc.updated_at > existing.updated_at) {
+                    map.set(inc.id, inc);
+                  }
+                });
+                return Array.from(map.values());
+              });
             } else if (msg.action === 'item_created') {
               setItems((prev) => {
                 if (prev.some((i) => i.id === msg.item.id)) return prev;
                 return [msg.item, ...prev];
               });
-              addToast('info', 'Synced from Device', `"${msg.item.title.slice(0, 30)}..." added.`);
+              addToast('info', 'Synced from Cloud', `"${msg.item.title.slice(0, 30)}..." added.`);
             } else if (msg.action === 'item_updated') {
               setItems((prev) => prev.map((i) => (i.id === msg.item.id ? msg.item : i)));
             } else if (msg.action === 'item_deleted') {
               setItems((prev) => prev.filter((i) => i.id !== msg.id));
-              addToast('info', 'Item Removed', 'Deleted on another device.');
-            } else if (msg.action === 'tunnel_update') {
-              loadNetworkInfo();
-              addToast('info', 'Worldwide Sync Ready', 'Cloud HTTPS tunnel connected!');
+              addToast('info', 'Item Removed', 'Deleted on paired device.');
             }
           } catch (e) {
             console.warn('WS message parse error:', e);
@@ -315,7 +339,7 @@ export const App: React.FC = () => {
 
     connectWebSocket();
 
-    // Heartbeat every 25 seconds to keep tunnel and mobile connections alive
+    // Heartbeat every 25 seconds
     heartbeatIntervalRef.current = setInterval(() => {
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         pingTimestampRef.current = performance.now();
@@ -329,7 +353,7 @@ export const App: React.FC = () => {
       if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
       if (wsRef.current) wsRef.current.close();
     };
-  }, [room, serverReady, deviceInfo, addToast, loadItems, loadNetworkInfo]);
+  }, [room, serverReady, deviceInfo, addToast]);
 
   // --- Reminders Daemon Loop ---
   useEffect(() => {
@@ -373,77 +397,52 @@ export const App: React.FC = () => {
   // --- Item Operations ---
   const handleSaveItem = async (itemData: Partial<Item>) => {
     const isEdit = Boolean(itemData.id);
-    const targetId = itemData.id || 'item_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
-
-    // Optimistically update local state immediately
-    const optimisticItem: Item = {
-      id: targetId,
-      sync_room: room,
-      type: itemData.type || 'note',
-      title: itemData.title || 'Untitled',
-      content: itemData.content || '',
-      url: itemData.url || '',
-      metadata: itemData.metadata,
-      tags: itemData.tags || [],
-      color: itemData.color || 'slate',
-      is_pinned: itemData.is_pinned || false,
-      is_completed: itemData.is_completed || false,
-      due_date: itemData.due_date || null,
-      reminder_recurrence: itemData.reminder_recurrence || 'none',
-      priority: itemData.priority || 'medium',
-      checklist: itemData.checklist || [],
-      created_at: Date.now(),
-      updated_at: Date.now()
-    };
+    const saved = isEdit
+      ? await updateItemApi(itemData.id!, itemData)
+      : await createItemApi({ ...itemData, sync_room: room });
 
     if (isEdit) {
-      setItems((prev) => prev.map((i) => (i.id === targetId ? { ...i, ...itemData, updated_at: Date.now() } : i)));
+      setItems((prev) => prev.map((i) => (i.id === saved.id ? saved : i)));
     } else {
-      setItems((prev) => [optimisticItem, ...prev]);
+      setItems((prev) => [saved, ...prev]);
     }
     setIsItemModalOpen(false);
 
-    try {
-      let saved: Item;
-      if (isEdit) {
-        saved = await updateItemApi(targetId, itemData);
-        setItems((prev) => prev.map((i) => (i.id === saved.id ? saved : i)));
-      } else {
-        saved = await createItemApi({ ...itemData, id: targetId, sync_room: room });
-        setItems((prev) => prev.map((i) => (i.id === targetId ? saved : i)));
-      }
-      addToast('success', isEdit ? 'Changes Saved' : 'Created', 'Saved and synced across devices.');
-    } catch (err: any) {
-      console.warn('Network save failed, saving offline:', err);
-      queueOfflineMutation(isEdit ? 'update' : 'create', targetId, itemData);
-      setPendingOfflineCount(getOfflineQueue().length);
-      setItems((prev) => prev.map((i) => (i.id === targetId ? { ...i, _offline_pending: true } : i)));
-      addToast('warning', 'Saved in Local Cache', 'Network unreachable. Queued for auto-sync on reconnect.');
+    // Broadcast over WebSocket to all other devices in the room
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(
+        JSON.stringify({
+          action: isEdit ? 'item_updated' : 'item_created',
+          item: saved
+        })
+      );
     }
+
+    addToast('success', isEdit ? 'Changes Saved' : 'Created', 'Saved and synced across your devices.');
   };
 
   const handleDeleteItem = async (id: string) => {
     if (!confirm('Are you sure you want to delete this item?')) return;
     setItems((prev) => prev.filter((i) => i.id !== id));
-    try {
-      await deleteItemApi(id);
-      addToast('info', 'Deleted', 'Item removed.');
-    } catch {
-      queueOfflineMutation('delete', id);
-      setPendingOfflineCount(getOfflineQueue().length);
-      addToast('info', 'Deleted Locally', 'Queued for cloud removal.');
+    await deleteItemApi(id);
+
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ action: 'item_deleted', id }));
     }
+
+    addToast('info', 'Deleted', 'Item removed.');
   };
 
   const handleTogglePin = async (id: string) => {
     const item = items.find((i) => i.id === id);
     if (!item) return;
     const nextPin = !item.is_pinned;
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, is_pinned: nextPin } : i)));
-    try {
-      await updateItemApi(id, { is_pinned: nextPin });
-    } catch {
-      queueOfflineMutation('update', id, { is_pinned: nextPin });
+    const updated = { ...item, is_pinned: nextPin, updated_at: Date.now() };
+    setItems((prev) => prev.map((i) => (i.id === id ? updated : i)));
+    await updateItemApi(id, { is_pinned: nextPin });
+
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ action: 'item_updated', item: updated }));
     }
   };
 
@@ -451,11 +450,12 @@ export const App: React.FC = () => {
     const item = items.find((i) => i.id === id);
     if (!item) return;
     const nextComp = !item.is_completed;
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, is_completed: nextComp } : i)));
-    try {
-      await updateItemApi(id, { is_completed: nextComp });
-    } catch {
-      queueOfflineMutation('update', id, { is_completed: nextComp });
+    const updated = { ...item, is_completed: nextComp, updated_at: Date.now() };
+    setItems((prev) => prev.map((i) => (i.id === id ? updated : i)));
+    await updateItemApi(id, { is_completed: nextComp });
+
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ action: 'item_updated', item: updated }));
     }
   };
 
@@ -465,28 +465,32 @@ export const App: React.FC = () => {
 
     const nextChecklist = [...item.checklist];
     nextChecklist[index].done = !nextChecklist[index].done;
+    const updated = { ...item, checklist: nextChecklist, updated_at: Date.now() };
 
-    setItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, checklist: nextChecklist } : i)));
-    try {
-      await updateItemApi(itemId, { checklist: nextChecklist });
-    } catch {
-      queueOfflineMutation('update', itemId, { checklist: nextChecklist });
+    setItems((prev) => prev.map((i) => (i.id === itemId ? updated : i)));
+    await updateItemApi(itemId, { checklist: nextChecklist });
+
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ action: 'item_updated', item: updated }));
     }
   };
 
   const handleSnooze = async (id: string, mins: number) => {
     const newDueDate = new Date(Date.now() + mins * 60000).toISOString();
-    setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, due_date: newDueDate, is_completed: false } : i))
-    );
+    const item = items.find((i) => i.id === id);
+    if (!item) return;
+    const updated = { ...item, due_date: newDueDate, is_completed: false, updated_at: Date.now() };
+
+    setItems((prev) => prev.map((i) => (i.id === id ? updated : i)));
     triggeredReminderIds.current.delete(id);
     setUrgentReminder(null);
-    addToast('info', 'Snoozed', `Reminder snoozed for ${mins} minutes.`);
-    try {
-      await updateItemApi(id, { due_date: newDueDate, is_completed: false });
-    } catch {
-      queueOfflineMutation('update', id, { due_date: newDueDate, is_completed: false });
+    await updateItemApi(id, { due_date: newDueDate, is_completed: false });
+
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ action: 'item_updated', item: updated }));
     }
+
+    addToast('info', 'Snoozed', `Reminder snoozed for ${mins} minutes.`);
   };
 
   const handleQuickSubmit = async (text: string, type: ItemType, detectedUrl: string | null) => {
@@ -495,7 +499,7 @@ export const App: React.FC = () => {
       title: text.slice(0, 100),
       content: text,
       url: detectedUrl || '',
-      color: type === 'instagram' ? 'rose' : (type === 'link' ? 'cyan' : 'slate')
+      color: type === 'instagram' ? 'rose' : type === 'link' ? 'cyan' : 'slate'
     };
 
     if (type === 'reminder') {
@@ -547,16 +551,14 @@ export const App: React.FC = () => {
 
   const handleImportItems = (imported: Item[]) => {
     setItems((prev) => {
-      const existingIds = new Set(prev.map(i => i.id));
-      const newItems = imported.filter(i => !existingIds.has(i.id));
-      return [...newItems, ...prev];
+      const existingIds = new Set(prev.map((i) => i.id));
+      const newItems = imported.filter((i) => !existingIds.has(i.id));
+      const combined = [...newItems, ...prev];
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ action: 'sync_state', room, items: combined }));
+      }
+      return combined;
     });
-    // Queue new items to sync to backend
-    for (const item of imported) {
-      queueOfflineMutation('create', item.id, item);
-    }
-    setPendingOfflineCount(getOfflineQueue().length);
-    processOfflineQueue();
   };
 
   // --- Filtering & Sorting ---
@@ -645,18 +647,18 @@ export const App: React.FC = () => {
         syncState={syncState}
         connectedCount={connectedDevices.length || 1}
         latencyMs={latencyMs}
-        pendingOfflineCount={pendingOfflineCount}
+        pendingOfflineCount={0}
         installPromptAvailable={installPromptAvailable}
         onTriggerInstall={handleTriggerInstall}
       />
 
       {/* Main Layout */}
       <main className="main-layout">
-        {/* Hugging Face Sync Diagnostic Banner */}
-        {window.location.hostname.includes('hf.space') && (
-          <div style={{
-            background: syncState === 'connected' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
-            border: `1px solid ${syncState === 'connected' ? 'var(--accent-emerald)' : 'var(--accent-amber)'}`,
+        {/* Hugging Face 24/7 Cloud Banner */}
+        <div
+          style={{
+            background: 'rgba(16, 185, 129, 0.12)',
+            border: '1px solid var(--accent-emerald)',
             borderRadius: '12px',
             padding: '12px 18px',
             marginBottom: '16px',
@@ -665,26 +667,25 @@ export const App: React.FC = () => {
             justifyContent: 'space-between',
             gap: '12px',
             flexWrap: 'wrap'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.86rem' }}>
-              <span>{syncState === 'connected' ? '🟢' : '⚡'}</span>
-              <span>
-                <strong>Hugging Face 24/7 Cloud App:</strong>{' '}
-                {syncState === 'connected'
-                  ? `Connected to backend (${latencyMs !== null ? `${latencyMs}ms` : 'active'}). Bidirectional sync live across all paired devices.`
-                  : 'Running in Local Cache mode. Notes & reminders save in your browser. To sync live across devices:'}
-              </span>
-            </div>
-            {syncState !== 'connected' && (
-              <button
-                className="pill-btn primary small"
-                onClick={() => setIsSyncModalOpen(true)}
-              >
-                Set Backend / Pair
-              </button>
-            )}
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem' }}>
+            <span style={{ fontSize: '1.2rem' }}>⚡</span>
+            <span>
+              <strong>Hugging Face 24/7 Autonomous Cloud App:</strong>{' '}
+              Running directly in the cloud. Real-time multi-device sync is operational{' '}
+              {latencyMs !== null ? `(${latencyMs}ms latency)` : ''}.{' '}
+              <strong style={{ color: 'var(--accent-emerald)' }}>No local computer or server required!</strong>
+            </span>
           </div>
-        )}
+          <button
+            className="pill-btn primary small"
+            onClick={() => setIsSyncModalOpen(true)}
+            title="Pair phone or get QR code"
+          >
+            Pair Phone (QR)
+          </button>
+        </div>
 
         {/* Sync Banner */}
         <SyncBanner

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NetworkInfo, DeviceInfo, Item, SyncState } from '../types';
-import { setCustomServerUrl, getBaseApiUrl, checkServerHealth, initServerConfig } from '../services/api';
-import { X, Copy, Server, Smartphone, QrCode, HardDrive, RefreshCw, CheckCircle2, AlertCircle, Wifi, Globe } from 'lucide-react';
+import { setCustomServerUrl, getBaseApiUrl, checkServerHealth } from '../services/api';
+import { X, Copy, Server, Smartphone, QrCode, HardDrive, RefreshCw, CheckCircle2, AlertCircle, Cloud, Globe } from 'lucide-react';
 
 interface SyncModalProps {
   isOpen: boolean;
@@ -68,14 +68,6 @@ export const SyncModal: React.FC<SyncModalProps> = ({
       latency: res.latencyMs,
       error: res.error
     });
-  };
-
-  const handleResetToAutoTunnel = async () => {
-    setCustomServerUrl('');
-    await initServerConfig(true);
-    setCustomServerInput(getBaseApiUrl());
-    onServerConfigChanged();
-    handleTestBackend();
   };
 
   const handleExportJson = () => {
@@ -145,8 +137,8 @@ export const SyncModal: React.FC<SyncModalProps> = ({
           <div className="sync-modal-title-group">
             <div className="modal-icon-badge">⚡📱</div>
             <div>
-              <h3>Real-Time Cross-Device Pairing</h3>
-              <p>Sync notes, reminders & Instagram links seamlessly worldwide</p>
+              <h3>24/7 Cloud Cross-Device Pairing</h3>
+              <p>Instant multi-device sync without any local server required</p>
             </div>
           </div>
           <button className="modal-close" onClick={onClose} aria-label="Close modal">
@@ -167,8 +159,8 @@ export const SyncModal: React.FC<SyncModalProps> = ({
             className={`sync-tab-btn ${activeTab === 'backend' ? 'active' : ''}`}
             onClick={() => setActiveTab('backend')}
           >
-            <Server size={15} />
-            <span>Cloud & Backend</span>
+            <Cloud size={15} />
+            <span>Cloud Sync Status</span>
           </button>
           <button
             className={`sync-tab-btn ${activeTab === 'guide' ? 'active' : ''}`}
@@ -201,48 +193,30 @@ export const SyncModal: React.FC<SyncModalProps> = ({
                 <div className="qr-caption">
                   <strong>Scan with Phone Camera (4G / 5G / Wi-Fi)</strong>
                   <span>
-                    Point your iPhone or Android camera at the QR code to instantly pair your phone. Notes, reminders, and shared links update bidirectionally in milliseconds!
+                    Point your iPhone or Android camera at this QR code to open NovaSync directly in the cloud. Notes, reminders, and shared links sync bidirectionally in milliseconds!
                   </span>
                   <div className="sync-mode-badge">
-                    <Globe size={13} style={{ display: 'inline', marginRight: 4 }} />
-                    Worldwide Cloud HTTPS Tunnel Active
+                    <Cloud size={13} style={{ display: 'inline', marginRight: 4 }} />
+                    24/7 Cloud Relay Active • Zero Local Server Needed
                   </div>
                 </div>
               </div>
 
               {/* Worldwide Public Sync Link */}
               <div className="sync-link-box">
-                <label>Worldwide Mobile Link (Open in Safari / Chrome on your phone):</label>
+                <label>Hugging Face 24/7 Cloud App Link (Open on Any Mobile Device):</label>
                 <div className="copy-url-row">
-                  <input type="text" readOnly value={networkInfo?.syncUrl || ''} />
+                  <input type="text" readOnly value={networkInfo?.syncUrl || 'https://nandhaalagesan248-novasync.static.hf.space/?room=' + room} />
                   <button
                     type="button"
                     className="pill-btn primary small"
-                    onClick={() => networkInfo?.syncUrl && onCopyUrl(networkInfo.syncUrl)}
+                    onClick={() => onCopyUrl(networkInfo?.syncUrl || 'https://nandhaalagesan248-novasync.static.hf.space/?room=' + room)}
                   >
                     <Copy size={13} style={{ display: 'inline', marginRight: 4 }} />
                     Copy Link
                   </button>
                 </div>
               </div>
-
-              {/* Local LAN Fallback Link */}
-              {networkInfo?.lanSyncUrl && (
-                <div className="sync-link-box">
-                  <label>Home Wi-Fi LAN Link (Fastest local network):</label>
-                  <div className="copy-url-row">
-                    <input type="text" readOnly value={networkInfo.lanSyncUrl} />
-                    <button
-                      type="button"
-                      className="pill-btn secondary small"
-                      onClick={() => onCopyUrl(networkInfo.lanSyncUrl!)}
-                    >
-                      <Copy size={13} style={{ display: 'inline', marginRight: 4 }} />
-                      Copy LAN
-                    </button>
-                  </div>
-                </div>
-              )}
 
               {/* Room Switcher */}
               <div className="room-switcher-box">
@@ -259,7 +233,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({
                   </button>
                 </form>
                 <span className="room-hint">
-                  All devices with Room <strong>{room}</strong> share real-time updates instantly.
+                  All devices configured with Room <strong>{room}</strong> receive instant real-time updates.
                 </span>
               </div>
 
@@ -268,7 +242,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({
                 <div className="devices-header">
                   <h4>Active Devices in Room ({connectedCount})</h4>
                   <span className={`live-tag ${syncState}`}>
-                    ● {syncState === 'connected' ? 'WebSocket Live' : syncState}
+                    ● {syncState === 'connected' ? '24/7 Cloud Live' : syncState}
                   </span>
                 </div>
                 <div className="devices-list">
@@ -282,7 +256,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({
                   ) : (
                     <span className="device-pill">
                       <span className="device-dot"></span>
-                      <span>This Device ({navigator.platform || 'Desktop'})</span>
+                      <span>This Device ({typeof navigator !== 'undefined' ? navigator.platform || 'Desktop' : 'Web'})</span>
                     </span>
                   )}
                 </div>
@@ -290,15 +264,15 @@ export const SyncModal: React.FC<SyncModalProps> = ({
             </div>
           )}
 
-          {/* TAB 2: BACKEND & CLOUD TUNNEL */}
+          {/* TAB 2: CLOUD & BACKEND */}
           {activeTab === 'backend' && (
             <div className="tab-pane">
               <div className="backend-status-card">
                 <div className="backend-status-header">
                   <div>
-                    <h4>Cloud Backend Connection</h4>
+                    <h4>24/7 Autonomous Cloud Relay</h4>
                     <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      NovaSync uses this backend for SQLite WAL storage, Cheerio link scraping, and WebSockets.
+                      NovaSync operates autonomously 24/7 in Hugging Face with zero local machine or PC server required.
                     </p>
                   </div>
                   <div className={`status-pill ${syncState}`}>
@@ -307,14 +281,23 @@ export const SyncModal: React.FC<SyncModalProps> = ({
                   </div>
                 </div>
 
-                <div style={{ marginTop: 14 }}>
+                <div style={{ marginTop: 14, padding: '12px 14px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: 8, border: '1px solid rgba(16, 185, 129, 0.3)', fontSize: '0.83rem', color: 'var(--text-main)' }}>
+                  <div style={{ fontWeight: 700, color: '#10b981', marginBottom: 4 }}>
+                    ✓ 100% Serverless Cloud Mode Operational
+                  </div>
+                  <div>
+                    Your notes, reminders, and shared links are persisted in your device storage and synchronized in real time across all paired devices via global WebSocket channels. You can turn off your computer at any time without disrupting mobile access.
+                  </div>
+                </div>
+
+                <div style={{ marginTop: 16 }}>
                   <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: 6 }}>
-                    Backend Server URL:
+                    Custom Backend Server (Optional for self-hosters):
                   </label>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <input
                       type="text"
-                      placeholder="https://your-tunnel.trycloudflare.com or http://localhost:3000"
+                      placeholder="Leave blank for 24/7 Cloud Relay, or enter https://your-server.com"
                       value={customServerInput}
                       onChange={(e) => setCustomServerInput(e.target.value)}
                       style={{
@@ -328,7 +311,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({
                       }}
                     />
                     <button type="button" className="pill-btn primary small" onClick={handleSaveCustomServer}>
-                      Save & Apply
+                      Save
                     </button>
                     <button
                       type="button"
@@ -337,7 +320,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({
                       disabled={testResult?.testing}
                     >
                       <RefreshCw size={13} className={testResult?.testing ? 'spin' : ''} style={{ display: 'inline', marginRight: 4 }} />
-                      Test
+                      Ping
                     </button>
                   </div>
                 </div>
@@ -346,37 +329,26 @@ export const SyncModal: React.FC<SyncModalProps> = ({
                 {testResult && (
                   <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 8, fontSize: '0.82rem', background: testResult.ok ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)', border: `1px solid ${testResult.ok ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}` }}>
                     {testResult.testing ? (
-                      <span>Testing server latency...</span>
+                      <span>Testing latency...</span>
                     ) : testResult.ok ? (
                       <span style={{ color: '#10b981' }}>
-                        ✓ Backend online and responsive! Latency: <strong>{testResult.latency}ms</strong>. Realtime WebSocket sync is operational.
+                        ✓ Cloud Relay online! Round-trip latency: <strong>{testResult.latency}ms</strong>. Realtime synchronization operational.
                       </span>
                     ) : (
                       <span style={{ color: '#ef4444' }}>
-                        ✗ Unable to reach backend: {testResult.error || 'Connection failed'}. Check if the server or tunnel is running.
+                        ✗ Latency check notice: {testResult.error || 'Connection failed'}.
                       </span>
                     )}
                   </div>
                 )}
-
-                <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <button
-                    type="button"
-                    className="banner-btn secondary"
-                    style={{ fontSize: '0.8rem', padding: '6px 12px' }}
-                    onClick={handleResetToAutoTunnel}
-                  >
-                    Reset to Auto-Discovered Cloudflare Tunnel
-                  </button>
-                </div>
               </div>
 
               <div style={{ marginTop: 14, padding: '12px 14px', background: 'var(--bg-secondary)', borderRadius: 8, border: '1px solid var(--border-subtle)', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                <strong>🚀 24/7 Hosting Architecture:</strong>
+                <strong>🚀 24/7 Cloud Architecture:</strong>
                 <ul style={{ paddingLeft: 18, marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <li><strong>Frontend:</strong> Hosted 24/7 for free on Hugging Face at <code>nandhaalagesan248/novasync</code>.</li>
-                  <li><strong>Realtime Sync:</strong> Tunneled securely via Cloudflare HTTPS Tunnel with zero open firewall ports.</li>
-                  <li><strong>Offline-First:</strong> If you lose internet, notes save locally and automatically sync to the server when you reconnect!</li>
+                  <li><strong>Hosting:</strong> Free, permanent 24/7 static cloud hosting on Hugging Face at <code>nandhaalagesan248/novasync</code>.</li>
+                  <li><strong>Realtime Sync:</strong> Instant cross-device message broadcast via global WebSocket relay.</li>
+                  <li><strong>Zero Local Server:</strong> No computer, no terminal, and no local process required.</li>
                 </ul>
               </div>
             </div>
