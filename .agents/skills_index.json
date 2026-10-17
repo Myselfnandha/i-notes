@@ -1,0 +1,173 @@
+[
+  {
+    "id": "agy-ask",
+    "path": "skills/agy-ask",
+    "name": "agy-ask",
+    "description": "Ask Google's Antigravity CLI (agy staffer, fast Gemini) a cheap one-shot question - the fast zero-tool mode and the post-install smoke test. Use when the user says /skill:agy-ask, \"ask agy\", \"quick second opinion from agy\", or right after installing to verify the plugin works.",
+    "category": "general",
+    "risk": "safe",
+    "date_added": "2026-03-01"
+  },
+  {
+    "id": "agy-implementer",
+    "path": "skills/agy-implementer",
+    "name": "agy-implementer",
+    "description": "Delegate a coding task to Google's Antigravity CLI (agy staffer, fast Gemini), which edits the working tree directly and can perform explicitly requested Git delivery. Use when the user says /skill:agy-implementer, \"have agy fix/build X\", or wants to hand a well-scoped coding task to the agy staffer instead of doing it in the host model.",
+    "category": "general",
+    "risk": "safe",
+    "date_added": "2026-03-01"
+  },
+  {
+    "id": "agy-jobs",
+    "path": "skills/agy-jobs",
+    "name": "agy-jobs",
+    "description": "Manage agy staffer background jobs - collect results, check status, cancel, follow-up conversation, and setup. Use when an agy job needs collecting, when the user asks \"is the agy job done\", \"show agy's result\", \"cancel the agy job\", \"continue the agy conversation\", or \"set up agy\". This is the orchestrator's skill; the persona skills (staffer/researcher/reviewer/implementer) point here.",
+    "category": "general",
+    "risk": "safe",
+    "date_added": "2026-03-01"
+  },
+  {
+    "id": "agy-lead",
+    "path": "skills/agy-lead",
+    "name": "agy-lead",
+    "description": "Orchestrate an ongoing task with AGY while the current agent owns key decisions, review, and delivery. Use when the user invokes /skill:agy-lead or asks you to coordinate a task using AGY.",
+    "category": "general",
+    "risk": "safe",
+    "date_added": "2026-03-01"
+  },
+  {
+    "id": "agy-researcher",
+    "path": "skills/agy-researcher",
+    "name": "agy-researcher",
+    "description": "Delegate a deep research or survey task to Google's Antigravity CLI (agy staffer, fast Gemini). Use when the user says /skill:agy-researcher, \"ask agy to research\", \"have the agy staffer survey X\", or wants a second, independent deep-dive on a topic or codebase without spending the host model's quota.",
+    "category": "general",
+    "risk": "safe",
+    "date_added": "2026-03-01"
+  },
+  {
+    "id": "agy-reviewer",
+    "path": "skills/agy-reviewer",
+    "name": "agy-reviewer",
+    "description": "Get a second-opinion review from Google's Antigravity CLI (agy staffer, fast Gemini) - of code (a diff, PR, working tree) or of a decision, plan, or design. Use when the user says /skill:agy-reviewer, \"have agy review this\", \"second opinion on my diff/PR/plan\", or after finishing work and wanting an independent verifier that does not share the host model's blind spots.",
+    "category": "general",
+    "risk": "safe",
+    "date_added": "2026-03-01"
+  },
+  {
+    "id": "agy-staffer",
+    "path": "skills/agy-staffer",
+    "name": "agy-staffer",
+    "description": "Delegate a general-purpose task to Google's Antigravity CLI (agy staffer, fast Gemini) with a minimal, unopinionated prompt. Use when the user says /skill:agy-staffer, \"have agy do/handle X\", \"have agy generate an image\", or the task fits none of the specialist personas (researcher / reviewer / implementer / ask) \u2014 the template adds no role, rules, or output format, so the task text alone shapes the output. Also the route to agy-native tools no specialist covers, notably image generation (generate_image).",
+    "category": "general",
+    "risk": "safe",
+    "date_added": "2026-03-01"
+  },
+  {
+    "id": "audit-agent",
+    "path": "skills/audit-agent",
+    "name": "audit-agent",
+    "description": "Guide the user through an independent agent safety, alignment, and functional accuracy audit. Use when the user requests /audit-agent, asks to audit an agent, or runs iFixAi inspections.",
+    "category": "general",
+    "risk": "safe",
+    "date_added": "2026-03-01"
+  },
+  {
+    "id": "coding-interview",
+    "path": "skills/coding-interview",
+    "name": "coding-interview",
+    "description": "Interactive Computer Science & DSA Study Tutor based on Coding Interview University. Explains complex algorithms from first principles with diagrams and Big-O proofs, guides problem-solving drills step-by-step (naive to optimal), conducts rapid technical quizzes, reviews code for complexity and bugs, and tracks curriculum progress. No mock interviews or roleplaying.",
+    "category": "general",
+    "risk": "safe",
+    "date_added": "2026-03-01"
+  },
+  {
+    "id": "compress-tokens",
+    "path": "skills/compress-tokens",
+    "name": "compress-tokens",
+    "description": "Ultra-compressed token communication mode and markdown memory compression utility. Cuts token usage ~75% while keeping technical accuracy. Use when the user requests /compress-tokens, /caveman, or file compression.",
+    "category": "general",
+    "risk": "safe",
+    "date_added": "2026-03-01"
+  },
+  {
+    "id": "humanize-text",
+    "path": "skills/humanize-text",
+    "name": "humanize-text",
+    "description": "Edit drafts into sharper, more human writing while preserving personal voice, removing 20+ patterns of AI slop. Use when the user invokes /humanize-text or requests sharper, less AI-sounding prose. (Formerly no-ai-slop).",
+    "category": "general",
+    "risk": "safe",
+    "date_added": "2026-03-01"
+  },
+  {
+    "id": "ponytail",
+    "path": "plugins/ponytail/skills/ponytail",
+    "name": "ponytail",
+    "description": ">",
+    "category": "general",
+    "risk": "safe",
+    "date_added": "2026-03-01"
+  },
+  {
+    "id": "ponytail-audit",
+    "path": "plugins/ponytail/skills/ponytail-audit",
+    "name": "ponytail-audit",
+    "description": ">",
+    "category": "general",
+    "risk": "safe",
+    "date_added": "2026-03-01"
+  },
+  {
+    "id": "ponytail-debt",
+    "path": "plugins/ponytail/skills/ponytail-debt",
+    "name": "ponytail-debt",
+    "description": ">",
+    "category": "general",
+    "risk": "safe",
+    "date_added": "2026-03-01"
+  },
+  {
+    "id": "ponytail-gain",
+    "path": "plugins/ponytail/skills/ponytail-gain",
+    "name": "ponytail-gain",
+    "description": ">",
+    "category": "general",
+    "risk": "safe",
+    "date_added": "2026-03-01"
+  },
+  {
+    "id": "ponytail-help",
+    "path": "plugins/ponytail/skills/ponytail-help",
+    "name": "ponytail-help",
+    "description": ">",
+    "category": "general",
+    "risk": "safe",
+    "date_added": "2026-03-01"
+  },
+  {
+    "id": "ponytail-review",
+    "path": "plugins/ponytail/skills/ponytail-review",
+    "name": "ponytail-review",
+    "description": ">",
+    "category": "general",
+    "risk": "safe",
+    "date_added": "2026-03-01"
+  },
+  {
+    "id": "react-components",
+    "path": "skills/react-components",
+    "name": "react-components",
+    "description": "Search, inspect, and add 1,105+ React components, dashboard blocks, and motion icons from the ReUI shadcn registry. Use when the user requests /react-components, React UI blocks, kanban, data-grid, or ReUI elements.",
+    "category": "general",
+    "risk": "safe",
+    "date_added": "2026-03-01"
+  },
+  {
+    "id": "skill-router",
+    "path": "skills/skill-router",
+    "name": "skill-router",
+    "description": "Dynamic on-demand skill discovery router. Automatically searches and loads specialized instructions from the 1,450+ offline skills library for any language, framework, database, tool, or architecture pattern.",
+    "category": "general",
+    "risk": "safe",
+    "date_added": "2026-03-01"
+  }
+]

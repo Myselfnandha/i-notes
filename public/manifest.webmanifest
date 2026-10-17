@@ -1,0 +1,29 @@
+{
+  "name": "NovaSync - Notes, Reminders & Links",
+  "short_name": "NovaSync",
+  "description": "Unified Notes, Reminders, and Instant Link Collector with Realtime Cross-Device Sync",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#090d16",
+  "theme_color": "#090d16",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "categories": ["productivity", "utilities"]
+}

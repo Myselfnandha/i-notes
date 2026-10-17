@@ -1,0 +1,8 @@
+node_modules/
+bin/cloudflared
+novasync.db
+novasync.db-shm
+novasync.db-wal
+.DS_Store
+dist/
+*.log

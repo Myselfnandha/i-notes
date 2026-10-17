@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>NovaSync — Notes, Reminders & Instant Link Saver</title>
+  <meta name="description" content="All-in-one productivity hub for notes taking, smart reminders, and automatic Instagram & web link bookmarking with real-time cross-device sync.">
+  <meta name="theme-color" content="#090d16">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+  <link rel="apple-touch-icon" href="/icons/icon.svg">
+
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand-group">
+        <div class="brand-logo">
+          <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+            <circle cx="12" cy="12" r="9" stroke-width="2" />
+          </svg>
+          <span class="pulse-indicator"></span>
+        </div>
+        <div class="brand-text">
+          <h1 class="brand-name">Nova<span>Sync</span></h1>
+          <span class="brand-badge">PRO REALTIME</span>
+        </div>
+      </div>
+
+      <!-- Search Bar -->
+      <div class="search-wrapper">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="searchInput" placeholder="Search notes, reminders, Instagram reels, tags... (Ctrl+K)" autocomplete="off">
+        <button id="clearSearchBtn" class="clear-btn" aria-label="Clear search" style="display: none;">✕</button>
+        <kbd class="kbd-shortcut">⌘K</kbd>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="header-actions">
+        <!-- Live Sync Status Button -->
+        <button id="syncModalBtn" class="pill-btn sync-btn" title="Click to pair with your phone or another laptop">
+          <span class="sync-dot live" id="syncDot"></span>
+          <span class="sync-text" id="syncStatusText">Connecting...</span>
+        </button>
+
+        <!-- Install App Button (Auto-shows when installable on Android/iOS/Desktop) -->
+        <button id="installAppBtn" class="pill-btn primary" title="Install NovaSync as Native Mobile App" style="display: none;">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span class="btn-label">Install App</span>
+        </button>
+
+        <!-- Quick Paste Link Button -->
+        <button id="quickPasteBtn" class="action-btn icon-btn" title="Paste Instagram or Web Link from Clipboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+          </svg>
+          <span class="btn-label">Paste Link</span>
+        </button>
+
+        <!-- New Item Primary Button -->
+        <button id="newItemBtn" class="action-btn primary-btn" title="Create Note, Reminder, or Bookmark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>New Item</span>
+        </button>
+
+        <!-- Notification Bell Toggle -->
+        <button id="notifToggleBtn" class="icon-toggle-btn" title="Enable browser reminder alerts & sounds">
+          <svg id="bellIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+          <span id="bellBadge" class="bell-badge" style="display: none;">!</span>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button id="themeToggleBtn" class="icon-toggle-btn" title="Toggle Dark/Light Mode">
+          <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-layout">
+
+    <!-- Secondary Banner / Sync Strip -->
+    <section class="sync-banner" id="syncBanner">
+      <div class="banner-content">
+        <div class="banner-info">
+          <span class="banner-pill">⚡ Instant Cross-Device Sync</span>
+          <span class="banner-text">Room: <strong id="bannerRoomName">MAIN</strong> • Real-time across all your phones, tablets & laptops.</span>
+        </div>
+        <div class="banner-actions">
+          <button id="bannerQrBtn" class="banner-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            <span>Scan QR Code to Pair Phone</span>
+          </button>
+          <button id="bannerCopyLinkBtn" class="banner-btn secondary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span>Copy Device Link</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Urgent Reminder Alert (Shows when reminders are due soon) -->
+    <div id="urgentAlertContainer" class="urgent-alert" style="display: none;">
+      <div class="urgent-icon">🔔</div>
+      <div class="urgent-info">
+        <h4 id="urgentTitle">Reminder Due Soon</h4>
+        <p id="urgentTime">in 15 minutes</p>
+      </div>
+      <div class="urgent-actions">
+        <button id="urgentSnoozeBtn" class="pill-btn small">Snooze 15m</button>
+        <button id="urgentDoneBtn" class="pill-btn small success">Complete</button>
+      </div>
+    </div>
+
+    <!-- Quick Add Bar -->
+    <section class="quick-add-section">
+      <div class="quick-add-card">
+        <div class="quick-add-input-row">
+          <div class="quick-type-selector">
+            <button class="type-chip active" data-type="note" title="Write a Note">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+              </svg>
+              <span>Note</span>
+            </button>
+            <button class="type-chip" data-type="reminder" title="Set a Reminder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              <span>Reminder</span>
+            </button>
+            <button class="type-chip" data-type="link" title="Save Instagram or Web Link">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+              </svg>
+              <span>Link / Reel</span>
+            </button>
+          </div>
+
+          <div class="quick-input-box">
+            <input type="text" id="quickInput" placeholder="Quickly jot a note, reminder, or paste an Instagram link (e.g. instagram.com/reel/...)..." autocomplete="off">
+            <button id="quickSubmitBtn" class="quick-btn-go" title="Save Immediately">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Detected link preview row -->
+        <div id="quickLinkDetected" class="quick-detected-bar" style="display: none;">
+          <span class="detected-badge">✨ Link Detected</span>
+          <span id="detectedUrlText" class="detected-url"></span>
+          <button id="quickSaveDetectedBtn" class="save-link-btn">Save With Full Preview</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filter & Categories Tabs -->
+    <nav class="categories-nav">
+      <div class="tabs-list">
+        <button class="tab-btn active" data-tab="all">
+          <span class="tab-label">All Items</span>
+          <span class="tab-count" id="countAll">0</span>
+        </button>
+        <button class="tab-btn" data-tab="note">
+          <span class="tab-icon">📝</span>
+          <span class="tab-label">Notes</span>
+          <span class="tab-count" id="countNotes">0</span>
+        </button>
+        <button class="tab-btn" data-tab="reminder">
+          <span class="tab-icon">⏰</span>
+          <span class="tab-label">Reminders</span>
+          <span class="tab-count" id="countReminders">0</span>
+        </button>
+        <button class="tab-btn" data-tab="instagram">
+          <span class="tab-icon">📸</span>
+          <span class="tab-label">Instagram</span>
+          <span class="tab-count" id="countInstagram">0</span>
+        </button>
+        <button class="tab-btn" data-tab="link">
+          <span class="tab-icon">🌐</span>
+          <span class="tab-label">Saved Links</span>
+          <span class="tab-count" id="countLinks">0</span>
+        </button>
+      </div>
+
+      <!-- Tag Filters Pills -->
+      <div class="tags-filter-bar" id="tagsFilterContainer">
+        <span class="tags-label">Tags:</span>
+        <button class="tag-pill active" data-tag="ALL">All</button>
+        <!-- Dynamic tags injected here -->
+      </div>
+    </nav>
+
+    <!-- Grid / Feed Section -->
+    <section class="items-section">
+      <!-- Section subheader -->
+      <div class="section-subheader">
+        <div class="active-filter-title" id="activeFilterTitle">Showing All Items</div>
+        <div class="view-controls">
+          <button id="sortToggleBtn" class="sort-btn" title="Sort order">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <polyline points="19 12 12 19 5 12"></polyline>
+            </svg>
+            <span id="sortLabel">Newest First</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Items Grid -->
+      <div class="items-grid" id="itemsGrid">
+        <!-- Rendered items here -->
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" id="emptyState" style="display: none;">
+        <div class="empty-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+          </svg>
+        </div>
+        <h3 id="emptyTitle">No items yet</h3>
+        <p id="emptyDesc">Write your first note, schedule a reminder, or paste an Instagram/website link above.</p>
+        <button id="emptyCreateBtn" class="action-btn primary-btn">+ Create First Item</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Floating Mobile Action Bar (for touch screens) -->
+  <div class="mobile-bottom-bar">
+    <button class="mobile-nav-btn active" data-tab="all">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+      <span>Home</span>
+    </button>
+    <button class="mobile-nav-btn" data-tab="note">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg>
+      <span>Notes</span>
+    </button>
+    <button class="mobile-fab" id="mobileFabBtn" title="Create Item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+    </button>
+    <button class="mobile-nav-btn" data-tab="reminder">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+      <span>Alerts</span>
+    </button>
+    <button class="mobile-nav-btn" data-tab="instagram">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+      <span>Links</span>
+    </button>
+    <button class="mobile-nav-btn" id="mobileInstallBtn" title="Install App to Home Screen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+      <span>Install</span>
+    </button>
+  </div>
+
+  <!-- MODAL: Create / Edit Item -->
+  <div class="modal-overlay" id="itemModalOverlay" style="display: none;">
+    <div class="modal-card" id="itemModalCard">
+      <div class="modal-header">
+        <h3 id="modalTitle">Create New Item</h3>
+        <button id="modalCloseBtn" class="modal-close" aria-label="Close modal">✕</button>
+      </div>
+
+      <!-- Type Switcher Tabs inside Modal -->
+      <div class="modal-type-tabs">
+        <button class="modal-tab active" data-mod-type="note">
+          <span>📝 Note</span>
+        </button>
+        <button class="modal-tab" data-mod-type="reminder">
+          <span>⏰ Reminder</span>
+        </button>
+        <button class="modal-tab" data-mod-type="link">
+          <span>🔗 Link / Instagram</span>
+        </button>
+      </div>
+
+      <form id="itemForm" class="modal-form">
+        <input type="hidden" id="formItemId" value="">
+        <input type="hidden" id="formItemType" value="note">
+
+        <!-- URL Input (shown for link & instagram) -->
+        <div class="form-group" id="urlGroup" style="display: none;">
+          <label for="formUrl">Link URL (Instagram Reel, Post, or Website)</label>
+          <div class="url-fetch-wrap">
+            <input type="url" id="formUrl" placeholder="https://www.instagram.com/reel/... or https://example.com">
+            <button type="button" id="fetchMetaBtn" class="fetch-btn">
+              <span id="fetchBtnSpinner" class="spinner" style="display: none;"></span>
+              <span>Fetch Preview</span>
+            </button>
+          </div>
+          <!-- Live Preview Box -->
+          <div id="urlPreviewBox" class="url-preview-box" style="display: none;">
+            <div class="preview-thumb-wrap">
+              <img id="prevImg" src="" alt="Thumbnail preview">
+            </div>
+            <div class="preview-details">
+              <span id="prevSite" class="preview-site">Site</span>
+              <h5 id="prevTitle" class="preview-title">Title</h5>
+              <p id="prevDesc" class="preview-desc">Description</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Title -->
+        <div class="form-group">
+          <label for="formTitle">Title</label>
+          <input type="text" id="formTitle" placeholder="e.g. Project brainstorm / Meeting at 3 PM / Instagram Reel" required>
+        </div>
+
+        <!-- Content / Notes Textarea -->
+        <div class="form-group">
+          <label for="formContent">Content / Description (Markdown supported)</label>
+          <textarea id="formContent" rows="4" placeholder="Add detailed thoughts, links, or notes..."></textarea>
+        </div>
+
+        <!-- Interactive Checklist Manager (for notes & reminders) -->
+        <div class="form-group" id="checklistGroup">
+          <label>Checklist Tasks</label>
+          <div class="checklist-items" id="formChecklistContainer">
+            <!-- Dynamic checklist items -->
+          </div>
+          <div class="checklist-add-row">
+            <input type="text" id="newChecklistInput" placeholder="Add checklist task...">
+            <button type="button" id="addChecklistBtn" class="add-sub-btn">+ Add Task</button>
+          </div>
+        </div>
+
+        <!-- Reminder Controls (shown only when type=reminder) -->
+        <div class="reminder-fields" id="reminderGroup" style="display: none;">
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="formDueDate">Due Date & Time</label>
+              <input type="datetime-local" id="formDueDate">
+            </div>
+            <div class="form-group flex-1">
+              <label for="formPriority">Priority</label>
+              <select id="formPriority">
+                <option value="low">🟢 Low</option>
+                <option value="medium" selected>🟡 Medium</option>
+                <option value="high">🔴 High</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="formRecurrence">Repeat Reminder</label>
+            <select id="formRecurrence">
+              <option value="none">Does not repeat</option>
+              <option value="daily">Every Day</option>
+              <option value="weekdays">Every Weekday (Mon-Fri)</option>
+              <option value="weekly">Every Week</option>
+              <option value="monthly">Every Month</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Color Theme & Tags -->
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Color Accent</label>
+            <div class="color-picker-row">
+              <label class="color-radio"><input type="radio" name="colorAccent" value="slate" checked><span class="color-dot color-slate"></span></label>
+              <label class="color-radio"><input type="radio" name="colorAccent" value="emerald"><span class="color-dot color-emerald"></span></label>
+              <label class="color-radio"><input type="radio" name="colorAccent" value="cyan"><span class="color-dot color-cyan"></span></label>
+              <label class="color-radio"><input type="radio" name="colorAccent" value="amber"><span class="color-dot color-amber"></span></label>
+              <label class="color-radio"><input type="radio" name="colorAccent" value="rose"><span class="color-dot color-rose"></span></label>
+              <label class="color-radio"><input type="radio" name="colorAccent" value="violet"><span class="color-dot color-violet"></span></label>
+            </div>
+          </div>
+
+          <div class="form-group flex-1">
+            <label for="formTags">Tags (comma separated)</label>
+            <input type="text" id="formTags" placeholder="Work, Ideas, Recipe, Instagram">
+          </div>
+        </div>
+
+        <!-- Pin & Status Options -->
+        <div class="form-options-row">
+          <label class="checkbox-label">
+            <input type="checkbox" id="formIsPinned">
+            <span>📌 Pin to top of feed</span>
+          </label>
+        </div>
+
+        <!-- Actions -->
+        <div class="modal-footer">
+          <button type="button" id="modalCancelBtn" class="pill-btn secondary">Cancel</button>
+          <button type="submit" id="modalSaveBtn" class="pill-btn primary">Save Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Cross-Device Sync & QR Code -->
+  <div class="modal-overlay" id="syncModalOverlay" style="display: none;">
+    <div class="modal-card sync-modal-card">
+      <div class="modal-header">
+        <div class="sync-modal-title-group">
+          <div class="modal-icon-badge">📱↔️💻</div>
+          <div>
+            <h3>Cross-Device Real-Time Sync</h3>
+            <p>Connect your phone, tablet, or another computer instantly</p>
+          </div>
+        </div>
+        <button id="syncModalCloseBtn" class="modal-close" aria-label="Close modal">✕</button>
+      </div>
+
+      <div class="sync-modal-body">
+        <!-- QR Code Section -->
+        <div class="qr-showcase">
+          <div class="qr-frame">
+            <img id="syncQrImage" src="" alt="Scan QR Code to open NovaSync on your phone">
+            <div id="qrLoading" class="qr-loading">Generating QR Code...</div>
+          </div>
+          <div class="qr-caption">
+            <strong>Scan with Phone Camera (4G/5G/Wi-Fi)</strong>
+            <span>Secured via HTTPS. Works from anywhere in the world on mobile data or Wi-Fi. Syncs live across all your devices in milliseconds!</span>
+            <div class="sync-mode-badge" id="syncModeBadge">🌍 Worldwide Cloud Sync Active</div>
+          </div>
+        </div>
+
+        <!-- Sync Link Copy Box -->
+        <div class="sync-link-box">
+          <label>Worldwide Public Sync Link (Open on Any Phone):</label>
+          <div class="copy-url-row">
+            <input type="text" id="syncUrlDisplay" readonly value="">
+            <button id="copySyncUrlBtn" class="pill-btn primary small">Copy Link</button>
+          </div>
+        </div>
+
+        <!-- Local LAN Fallback Link -->
+        <div class="sync-link-box" id="lanLinkBox">
+          <label>Home Wi-Fi LAN Fallback:</label>
+          <div class="copy-url-row">
+            <input type="text" id="lanUrlDisplay" readonly value="">
+            <button id="copyLanUrlBtn" class="pill-btn secondary small">Copy LAN</button>
+          </div>
+        </div>
+
+        <!-- Room Switcher -->
+        <div class="room-switcher-box">
+          <label>Sync Room Code:</label>
+          <div class="room-input-row">
+            <input type="text" id="roomCodeInput" placeholder="Enter Room (e.g. MAIN, HOME, WORK)">
+            <button id="switchRoomBtn" class="pill-btn secondary small">Switch Room</button>
+          </div>
+          <span class="room-hint">Devices sharing the same Room Code will automatically sync notes, reminders, and shared links.</span>
+        </div>
+
+        <!-- Connected Devices Presence -->
+        <div class="connected-devices-box">
+          <div class="devices-header">
+            <h4>Connected Devices in Room (<span id="connectedCount">1</span>)</h4>
+            <span class="live-tag">● Live WebSocket</span>
+          </div>
+          <div class="devices-list" id="devicesList">
+            <!-- Dynamic device pills -->
+          </div>
+        </div>
+
+        <!-- PWA / Share Target Instructions -->
+        <div class="share-sheet-guide">
+          <h4>📲 How to Share Directly from Instagram:</h4>
+          <ol>
+            <li>Open this link on your phone in Chrome / Safari.</li>
+            <li>Tap <strong>"Add to Home Screen"</strong> / <strong>"Install App"</strong>.</li>
+            <li>Now in Instagram, tap <strong>Share → NovaSync</strong>: your reel or post saves automatically!</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notifications Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Audio Context Chime Generator (No external audio file needed!) -->
+  <script src="/app.js"></script>
+</body>
+</html>
