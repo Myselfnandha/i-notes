@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { QrCode, Copy, Cloud, Check, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { QrCode, Copy, X, Wifi } from 'lucide-react';
 import { SyncState } from '../types';
 
 interface SyncBannerProps {
@@ -14,7 +14,6 @@ interface SyncBannerProps {
 
 export const SyncBanner: React.FC<SyncBannerProps> = ({
   room,
-  syncUrl,
   syncState,
   latencyMs,
   connectedCount,
@@ -37,10 +36,10 @@ export const SyncBanner: React.FC<SyncBannerProps> = ({
 
   if (isDismissed) {
     return (
-      <div className="sync-banner-collapsed" onClick={handleRestore} title="Click to show cloud sync details">
-        <span className="banner-pulse-dot"></span>
+      <div className="sync-banner-collapsed" onClick={handleRestore} title="Show cloud sync details">
+        <span className="banner-pulse-dot" />
         <span className="collapsed-text">
-          Room <strong>{room}</strong> • 24/7 Cloud Synced ({connectedCount} {connectedCount === 1 ? 'device' : 'devices'})
+          Room <strong>{room}</strong> • {connectedCount} {connectedCount === 1 ? 'device' : 'devices'} synced
         </span>
         <span className="collapsed-link">Show Banner ↓</span>
       </div>
@@ -52,38 +51,35 @@ export const SyncBanner: React.FC<SyncBannerProps> = ({
       <div className="banner-content">
         <div className="banner-info">
           <div className="banner-badge-group">
-            <span className="banner-pill">⚡ 24/7 Cloud Sync</span>
+            <span className="banner-pill">
+              <Wifi size={13} style={{ marginRight: 4 }} />
+              24/7 Cloud
+            </span>
             <span className="banner-room-chip">
               Room: <strong>{room}</strong>
             </span>
           </div>
-          <div className="banner-text">
-            <span className="banner-desktop-text">
-              Running 24/7 autonomously on Hugging Face cloud{' '}
-              {latencyMs !== null ? `(${latencyMs}ms latency)` : ''}. Instant real-time sync across all your phones, tablets & laptops worldwide.
-            </span>
-            <span className="banner-mobile-text">
-              Real-time sync active worldwide {latencyMs !== null ? `(${latencyMs}ms)` : ''}.
-            </span>
-          </div>
+          <span className="banner-text">
+            Instant real-time sync across your phones, tablets & laptops{latencyMs !== null ? ` (${latencyMs}ms)` : ''}.
+          </span>
         </div>
 
         <div className="banner-actions">
           <button className="banner-btn" onClick={onOpenSyncModal} title="Pair mobile phone via QR code">
-            <QrCode size={15} />
-            <span>Pair Phone</span>
+            <QrCode size={14} />
+            <span>Pair</span>
           </button>
           <button className="banner-btn secondary" onClick={onCopySyncLink} title="Copy device sync link">
-            <Copy size={15} />
+            <Copy size={14} />
             <span>Copy Link</span>
           </button>
           <button
             className="banner-close-btn"
             onClick={handleDismiss}
-            title="Minimize banner to save screen space"
-            aria-label="Minimize banner"
+            title="Minimize banner"
+            aria-label="Dismiss banner"
           >
-            <X size={15} />
+            <X size={14} />
           </button>
         </div>
       </div>
