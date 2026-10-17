@@ -65,12 +65,12 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({ onQuickSubmit, onOpenW
           <div className="quick-input-box">
             <input
               type="text"
-              placeholder="Quickly jot a note, reminder, or paste an Instagram link (e.g. instagram.com/reel/...)..."
+              placeholder="Quick jot note, reminder, or paste URL..."
               value={text}
               onChange={(e) => setText(e.target.value)}
               autoComplete="off"
             />
-            <button type="submit" className="quick-btn-go" title="Save Immediately">
+            <button type="submit" className="quick-btn-go" title="Save Immediately" aria-label="Save">
               <ArrowRight size={16} />
             </button>
           </div>

@@ -677,43 +677,13 @@ export const App: React.FC = () => {
 
       {/* Main Layout */}
       <main className="main-layout">
-        {/* Hugging Face 24/7 Cloud Banner */}
-        <div
-          style={{
-            background: 'rgba(16, 185, 129, 0.12)',
-            border: '1px solid var(--accent-emerald)',
-            borderRadius: '12px',
-            padding: '12px 18px',
-            marginBottom: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-            flexWrap: 'wrap'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.86rem' }}>
-            <span style={{ fontSize: '1.2rem' }}>⚡</span>
-            <span>
-              <strong>Hugging Face 24/7 Autonomous Cloud App:</strong>{' '}
-              Running directly in the cloud. Real-time multi-device sync is operational{' '}
-              {latencyMs !== null ? `(${latencyMs}ms latency)` : ''}.{' '}
-              <strong style={{ color: 'var(--accent-emerald)' }}>No local computer or server required!</strong>
-            </span>
-          </div>
-          <button
-            className="pill-btn primary small"
-            onClick={() => setIsSyncModalOpen(true)}
-            title="Pair phone or get QR code"
-          >
-            Pair Phone (QR)
-          </button>
-        </div>
-
-        {/* Sync Banner */}
+        {/* Unified 24/7 Cloud Sync Banner */}
         <SyncBanner
           room={room}
           syncUrl={networkInfo?.syncUrl || ''}
+          syncState={syncState}
+          latencyMs={latencyMs}
+          connectedCount={connectedDevices.length || 1}
           onOpenSyncModal={() => setIsSyncModalOpen(true)}
           onCopySyncLink={() => {
             if (networkInfo?.syncUrl) {
