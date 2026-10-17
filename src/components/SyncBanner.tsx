@@ -14,7 +14,6 @@ interface SyncBannerProps {
 
 export const SyncBanner: React.FC<SyncBannerProps> = ({
   room,
-  syncState,
   latencyMs,
   connectedCount,
   onOpenSyncModal,
@@ -36,53 +35,44 @@ export const SyncBanner: React.FC<SyncBannerProps> = ({
 
   if (isDismissed) {
     return (
-      <div className="sync-banner-collapsed" onClick={handleRestore} title="Show cloud sync details">
-        <span className="banner-pulse-dot" />
-        <span className="collapsed-text">
-          Room <strong>{room}</strong> • {connectedCount} {connectedCount === 1 ? 'device' : 'devices'} synced
-        </span>
-        <span className="collapsed-link">Show Banner ↓</span>
+      <div
+        className="cloud-strip"
+        style={{ cursor: 'pointer', opacity: 0.8 }}
+        onClick={handleRestore}
+        title="Click to show room sync actions"
+      >
+        <div className="cloud-strip-left">
+          <span className="room-chip">Room: {room}</span>
+          <span>• 24/7 Cloud Synced ({connectedCount} devices)</span>
+        </div>
+        <span style={{ fontSize: '0.74rem', color: 'var(--accent-cyan)', fontWeight: 600 }}>Show ↓</span>
       </div>
     );
   }
 
   return (
-    <section className="sync-banner">
-      <div className="banner-content">
-        <div className="banner-info">
-          <div className="banner-badge-group">
-            <span className="banner-pill">
-              <Wifi size={13} style={{ marginRight: 4 }} />
-              24/7 Cloud
-            </span>
-            <span className="banner-room-chip">
-              Room: <strong>{room}</strong>
-            </span>
-          </div>
-          <span className="banner-text">
-            Instant real-time sync across your phones, tablets & laptops{latencyMs !== null ? ` (${latencyMs}ms)` : ''}.
-          </span>
-        </div>
-
-        <div className="banner-actions">
-          <button className="banner-btn" onClick={onOpenSyncModal} title="Pair mobile phone via QR code">
-            <QrCode size={14} />
-            <span>Pair</span>
-          </button>
-          <button className="banner-btn secondary" onClick={onCopySyncLink} title="Copy device sync link">
-            <Copy size={14} />
-            <span>Copy Link</span>
-          </button>
-          <button
-            className="banner-close-btn"
-            onClick={handleDismiss}
-            title="Minimize banner"
-            aria-label="Dismiss banner"
-          >
-            <X size={14} />
-          </button>
-        </div>
+    <div className="cloud-strip">
+      <div className="cloud-strip-left">
+        <span className="room-chip">Room: {room}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <Wifi size={13} style={{ color: 'var(--accent-emerald)' }} />
+          24/7 Cloud Synced {latencyMs !== null ? `(${latencyMs}ms)` : ''}
+        </span>
       </div>
-    </section>
+
+      <div className="cloud-strip-actions">
+        <button className="strip-btn" onClick={onOpenSyncModal} title="Pair mobile phone with QR code">
+          <QrCode size={13} />
+          <span>Pair</span>
+        </button>
+        <button className="strip-btn" onClick={onCopySyncLink} title="Copy sync link">
+          <Copy size={13} />
+          <span>Copy</span>
+        </button>
+        <button className="strip-btn close" onClick={handleDismiss} title="Dismiss strip" aria-label="Dismiss">
+          <X size={13} />
+        </button>
+      </div>
+    </div>
   );
 };

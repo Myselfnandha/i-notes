@@ -32,70 +32,76 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({ onQuickSubmit, onOpenW
   };
 
   return (
-    <section className="quick-add-section">
-      <div className="quick-add-card">
-        <form onSubmit={handleSubmit} className="quick-add-input-row">
-          <div className="quick-type-selector">
-            <button
-              type="button"
-              className={`type-chip ${activeType === 'note' ? 'active' : ''}`}
-              onClick={() => setActiveType('note')}
-            >
-              <FileText size={14} />
-              <span>Note</span>
-            </button>
-            <button
-              type="button"
-              className={`type-chip ${activeType === 'reminder' ? 'active' : ''}`}
-              onClick={() => setActiveType('reminder')}
-            >
-              <Clock size={14} />
-              <span>Reminder</span>
-            </button>
-            <button
-              type="button"
-              className={`type-chip ${activeType === 'link' || activeType === 'instagram' ? 'active' : ''}`}
-              onClick={() => setActiveType('link')}
-            >
-              <LinkIcon size={14} />
-              <span>Link / Reel</span>
-            </button>
-          </div>
+    <section className="capture-box">
+      <form onSubmit={handleSubmit} className="capture-form">
+        <div className="capture-type-row">
+          <button
+            type="button"
+            className={`capture-chip ${activeType === 'note' ? 'active' : ''}`}
+            onClick={() => setActiveType('note')}
+          >
+            <FileText size={13} />
+            <span>Note</span>
+          </button>
+          <button
+            type="button"
+            className={`capture-chip ${activeType === 'reminder' ? 'active' : ''}`}
+            onClick={() => setActiveType('reminder')}
+          >
+            <Clock size={13} />
+            <span>Reminder</span>
+          </button>
+          <button
+            type="button"
+            className={`capture-chip ${activeType === 'link' || activeType === 'instagram' ? 'active' : ''}`}
+            onClick={() => setActiveType('link')}
+          >
+            <LinkIcon size={13} />
+            <span>Link / Reel</span>
+          </button>
+        </div>
 
-          <div className="quick-input-box">
-            <input
-              type="text"
-              placeholder="Quick jot note, reminder, or paste URL..."
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              autoComplete="off"
-            />
-            <button type="submit" className="quick-btn-go" title="Save Immediately" aria-label="Save">
-              <ArrowRight size={16} />
-            </button>
-          </div>
-        </form>
+        <div className="capture-input-row">
+          <input
+            type="text"
+            className="capture-input"
+            placeholder={
+              activeType === 'reminder'
+                ? 'Set a reminder... (e.g. Call dentist tomorrow at 4pm)'
+                : activeType === 'link'
+                ? 'Paste an Instagram reel or web URL...'
+                : 'Quick jot a note or thought...'
+            }
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            autoComplete="off"
+          />
+          <button type="submit" className="capture-submit-btn" title="Save" aria-label="Save">
+            <ArrowRight size={17} />
+          </button>
+        </div>
 
         {detectedUrl && (
-          <div className="quick-detected-bar">
-            <span className="detected-badge">
-              <Sparkles size={12} style={{ display: 'inline', marginRight: 4 }} />
-              Link Detected
+          <div className="detected-link-bar">
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
+              <Sparkles size={13} style={{ color: 'var(--accent-cyan)' }} />
+              Link:
             </span>
-            <span className="detected-url">{detectedUrl}</span>
+            <span className="detected-link-text">{detectedUrl}</span>
             <button
               type="button"
-              className="save-link-btn"
+              className="strip-btn"
+              style={{ background: 'var(--accent-rose)', color: '#fff', border: 'none' }}
               onClick={() => {
                 onOpenWithUrl(detectedUrl);
                 setText('');
               }}
             >
-              Save With Full Preview
+              Preview & Save
             </button>
           </div>
         )}
-      </div>
+      </form>
     </section>
   );
 };
