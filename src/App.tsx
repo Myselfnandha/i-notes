@@ -148,9 +148,32 @@ export const App: React.FC = () => {
       navigator.serviceWorker.register('/sw.js').catch((err) => console.warn('SW register:', err));
     }
 
-    // Check incoming share
+    // Check incoming share from Android / iOS Web Share Target or query params
     const params = new URLSearchParams(window.location.search);
-    if (params.get('shared') === 'success') {
+    const sharedUrl = params.get('url');
+    const sharedText = params.get('text');
+    const sharedTitle = params.get('title');
+
+    if (sharedUrl || sharedText) {
+      const detectedUrl = sharedUrl || (sharedText?.match(/https?:\/\/[^\s]+/i)?.[0]) || '';
+      const content = sharedText || '';
+      const isIg = /instagram\.com/i.test(detectedUrl);
+      const title = sharedTitle || (isIg ? 'Shared Instagram Reel' : detectedUrl ? 'Shared Bookmark' : 'Shared Note');
+
+      setTimeout(() => {
+        handleSaveItem({
+          type: isIg ? 'instagram' : detectedUrl ? 'link' : 'note',
+          title,
+          content: content !== detectedUrl ? content : '',
+          url: detectedUrl,
+          tags: ['Shared', isIg ? 'Instagram' : 'Mobile'],
+          color: isIg ? 'rose' : detectedUrl ? 'cyan' : 'emerald'
+        });
+        addToast('success', 'Shared Content Saved!', `"${title}" captured from mobile share.`);
+      }, 600);
+
+      window.history.replaceState({}, document.title, window.location.pathname + (room !== 'MAIN' ? `?room=${room}` : ''));
+    } else if (params.get('shared') === 'success') {
       addToast('success', 'Shared Content Saved!', 'New item automatically captured and synced across your devices.');
       window.history.replaceState({}, document.title, window.location.pathname + (room !== 'MAIN' ? `?room=${room}` : ''));
     }

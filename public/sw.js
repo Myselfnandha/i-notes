@@ -1,16 +1,24 @@
-const CACHE_NAME = 'novasync-v2';
+const CACHE_NAME = 'novasync-v4';
 const STATIC_ASSETS = [
-  '/',
   '/index.html',
   '/manifest.webmanifest',
   '/icons/icon.svg'
 ];
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    }).then(() => self.skipWaiting())
+      return Promise.all(
+        STATIC_ASSETS.map((asset) => {
+          return fetch(asset, { cache: 'reload' })
+            .then((res) => {
+              if (res.ok) return cache.put(asset, res);
+            })
+            .catch((err) => console.warn('Cache asset skip:', asset, err));
+        })
+      );
+    })
   );
 });
 
@@ -27,32 +35,38 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Always bypass cache for config.json, dynamic APIs, websockets, and share targets
+  // Exclude WebSockets, config.json, and external APIs
   if (
     url.pathname === '/config.json' ||
-    url.pathname.startsWith('/api') ||
-    url.pathname.startsWith('/ws') ||
-    url.pathname.startsWith('/share') ||
-    url.searchParams.has('v') ||
-    url.searchParams.has('t')
+    url.protocol.startsWith('ws') ||
+    url.hostname.includes('itty.ws') ||
+    url.hostname.includes('microlink.io') ||
+    event.request.method !== 'GET'
   ) {
     return;
   }
 
-  // Stale-while-revalidate for hashed assets, network-first for index
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return networkResponse;
-        })
-        .catch(() => cachedResponse);
+  // Navigation requests: serve /index.html (SPA Fallback)
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return caches.match('/index.html');
+      })
+    );
+    return;
+  }
 
-      return cachedResponse || fetchPromise;
+  // Cache-first with network fallback for static assets
+  event.respondWith(
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached;
+      return fetch(event.request).then((res) => {
+        if (res.status === 200) {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then((c) => c.put(event.request, clone));
+        }
+        return res;
+      });
     })
   );
 });

@@ -2,7 +2,7 @@
   "name": "NovaSync - Notes, Reminders & Links",
   "short_name": "NovaSync",
   "description": "Unified Notes, Reminders, and Instant Link Collector with Realtime Cross-Device Sync",
-  "start_url": "/",
+  "start_url": "/index.html",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
@@ -11,13 +11,13 @@
   "icons": [
     {
       "src": "/icons/icon.svg",
-      "sizes": "any",
+      "sizes": "192x192 512x512 any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ],
   "share_target": {
-    "action": "/share",
+    "action": "/index.html",
     "method": "GET",
     "params": {
       "title": "title",
