@@ -1,37 +1,32 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Search,
-  Plus,
-  MoreHorizontal,
+  X,
   Sun,
   Moon,
-  X,
-  ArrowLeft,
+  QrCode,
   HardDriveDownload,
-  Bell,
+  Upload,
   Volume2,
-  Link as LinkIcon,
   Download,
-  Smartphone
+  Share2,
+  Sparkles,
+  FolderOpen
 } from 'lucide-react';
 import { SyncState } from '../types';
 
 interface HeaderProps {
   searchQuery: string;
   onSearchChange: (q: string) => void;
-  onOpenSync?: () => void;
-  onOpenSyncModal?: () => void;
-  onOpenCreate?: () => void;
-  onOpenCreateModal?: () => void;
+  onOpenSync: () => void;
+  onOpenCreate: () => void;
   onToggleTheme: () => void;
   theme: 'dark' | 'light';
   syncState: SyncState;
+  room: string;
   connectedCount: number;
   onOpenBackup?: () => void;
-  onOpenBackupModal?: () => void;
-  onQuickPaste: () => void;
   onTestSound?: () => void;
-  onRequestNotifications?: () => void;
   installPromptAvailable?: boolean;
   onTriggerInstall?: () => void;
 }
@@ -40,268 +35,220 @@ export const Header: React.FC<HeaderProps> = ({
   searchQuery,
   onSearchChange,
   onOpenSync,
-  onOpenSyncModal,
   onOpenCreate,
-  onOpenCreateModal,
   onToggleTheme,
   theme,
   syncState,
+  room,
   connectedCount,
   onOpenBackup,
-  onOpenBackupModal,
-  onQuickPaste,
   onTestSound,
-  onRequestNotifications,
   installPromptAvailable,
   onTriggerInstall
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const mobileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSyncClick = onOpenSync || onOpenSyncModal || (() => {});
-  const handleCreateClick = onOpenCreate || onOpenCreateModal || (() => {});
-  const handleBackupClick = onOpenBackup || onOpenBackupModal || (() => {});
+  // Dynamic greeting based on time of day
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
 
-  // Focus mobile input on open
-  useEffect(() => {
-    if (isMobileSearchOpen) {
-      mobileInputRef.current?.focus();
-    }
-  }, [isMobileSearchOpen]);
+  // Live formatted date
+  const formattedDate = new Date().toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric'
+  });
 
-  // Handle outside click & escape
+  const formattedTime = new Date().toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit'
+  });
+
   useEffect(() => {
     const handleOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setIsMenuOpen(false);
       }
     };
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsMenuOpen(false);
-        setIsMobileSearchOpen(false);
-      }
-    };
     document.addEventListener('mousedown', handleOutside);
-    document.addEventListener('keydown', handleKey);
-    return () => {
-      document.removeEventListener('mousedown', handleOutside);
-      document.removeEventListener('keydown', handleKey);
-    };
+    return () => document.removeEventListener('mousedown', handleOutside);
   }, []);
 
-  const getSyncDotClass = () => {
-    if (syncState === 'connected') return 'live';
-    if (syncState === 'connecting' || syncState === 'reconnecting') return 'connecting';
-    return 'offline';
-  };
-
   return (
-    <header className="app-header">
-      <div className="header-container">
-        {/* Mobile Search Active Overlay */}
-        {isMobileSearchOpen ? (
-          <div className="mobile-search-bar active">
-            <button
-              className="icon-btn"
-              onClick={() => {
-                setIsMobileSearchOpen(false);
-                onSearchChange('');
-              }}
-              title="Close search"
-              aria-label="Back"
-            >
-              <ArrowLeft size={18} />
-            </button>
-            <div className="mobile-search-input-wrap">
-              <input
-                ref={mobileInputRef}
-                type="text"
-                placeholder="Search notes, reminders, links..."
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                autoComplete="off"
-              />
-              {searchQuery && (
-                <button
-                  className="clear-btn"
-                  onClick={() => onSearchChange('')}
-                  title="Clear"
-                  aria-label="Clear search"
-                >
-                  <X size={15} />
-                </button>
-              )}
-            </div>
+    <header className="editorial-header pt-safe">
+      <div className="header-inner">
+        {/* Left: Brand Monogram */}
+        <div className="brand-section" onClick={onOpenSync} title="Folio · NovaSync Workspace">
+          <div className="brand-seal">F</div>
+          <div className="brand-text">
+            <span className="brand-title">Folio</span>
+            <span className="brand-subtitle">Editorial Notes</span>
           </div>
-        ) : (
-          <>
-            {/* Brand Logo */}
-            <div className="brand-group" onClick={handleSyncClick} title="Pair device & cloud status">
-              <div className="brand-logo">
-                <span className="brand-bolt">⚡</span>
-                <span className="pulse-indicator" />
-              </div>
-              <h1 className="brand-name">
-                Nova<span>Sync</span>
-              </h1>
-            </div>
+        </div>
 
-            {/* Desktop Center Search Bar */}
-            <div className="search-wrapper">
-              <Search className="search-icon" size={16} />
-              <input
-                type="text"
-                id="searchInput"
-                placeholder="Search notes, reminders, tags... (⌘K)"
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                autoComplete="off"
-                aria-label="Search items"
-              />
-              {searchQuery ? (
-                <button className="clear-btn" onClick={() => onSearchChange('')} title="Clear">
-                  <X size={14} />
-                </button>
-              ) : (
-                <kbd className="kbd-shortcut">⌘K</kbd>
-              )}
-            </div>
+        {/* Center: Greeting & Date */}
+        <div className="header-center-info">
+          <span className="greeting-text">{getGreeting()}, Nandha</span>
+          <span className="live-date-text font-mono">
+            {formattedDate} · {formattedTime}
+          </span>
+        </div>
 
-            {/* Header Right Action Items */}
-            <div className="header-actions">
-              {/* Mobile Search Toggle Icon */}
-              <button
-                className="icon-btn mobile-only-btn"
-                onClick={() => setIsMobileSearchOpen(true)}
-                title="Search"
-                aria-label="Search"
+        {/* Right: Actions */}
+        <div className="header-right-actions">
+          {/* Sync Status Badge */}
+          <button
+            className="header-sync-chip"
+            onClick={onOpenSync}
+            title={`Synced with room ${room} (${connectedCount} devices connected)`}
+          >
+            <span className={`sync-pulse ${syncState}`} />
+            <span className="font-mono">{room}</span>
+          </button>
+
+          {/* Theme Toggle */}
+          <button
+            className="header-icon-btn"
+            onClick={onToggleTheme}
+            title={theme === 'dark' ? 'Switch to Light Paper' : 'Switch to Dark Soot'}
+            aria-label="Toggle theme"
+          >
+            {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+          </button>
+
+          {/* Settings / Menu Anchor */}
+          <div style={{ position: 'relative' }} ref={menuRef}>
+            <button
+              className="header-icon-btn"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              title="Preferences & Tools"
+              aria-label="Settings"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+                tune
+              </span>
+            </button>
+
+            {isMenuOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 8px)',
+                  right: 0,
+                  width: 220,
+                  background: 'var(--surface-container-lowest)',
+                  border: '1px solid var(--card-hairline)',
+                  borderRadius: 'var(--radius-md)',
+                  boxShadow: 'var(--shadow-modal)',
+                  padding: 6,
+                  zIndex: 100,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 2
+                }}
               >
-                <Search size={17} />
-              </button>
-
-              {/* Real-time Sync Status Pill */}
-              <button
-                className="sync-pill-btn"
-                onClick={handleSyncClick}
-                title="Cloud sync status • Click to pair phone or change room"
-              >
-                <span className={`sync-dot ${getSyncDotClass()}`} />
-                <span>{syncState === 'connected' ? `Synced • ${connectedCount}d` : syncState}</span>
-              </button>
-
-              {/* Desktop + New Button */}
-              <button
-                className="primary-add-btn"
-                onClick={handleCreateClick}
-                title="Create Note, Reminder, or Link"
-              >
-                <Plus size={16} />
-                <span>New</span>
-              </button>
-
-              {/* Theme Toggle Button */}
-              <button
-                className="icon-btn"
-                onClick={onToggleTheme}
-                title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
-                aria-label="Toggle theme"
-              >
-                {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
-              </button>
-
-              {/* More Actions Dropdown */}
-              <div className="menu-anchor" ref={menuRef}>
                 <button
-                  className="icon-btn"
-                  onClick={() => setIsMenuOpen((prev) => !prev)}
-                  title="More actions"
-                  aria-label="More actions"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '8px 10px',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.8rem',
+                    color: 'var(--on-surface)',
+                    cursor: 'pointer',
+                    width: '100%',
+                    textAlign: 'left'
+                  }}
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    onOpenSync();
+                  }}
                 >
-                  <MoreHorizontal size={17} />
+                  <QrCode size={15} style={{ color: 'var(--primary)' }} />
+                  <span>Pair Devices & QR</span>
                 </button>
 
-                {isMenuOpen && (
-                  <div className="dropdown-menu">
-                    <button
-                      className="dropdown-action"
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        handleSyncClick();
-                      }}
-                    >
-                      <Smartphone size={15} />
-                      <span>Pair Devices (QR)</span>
-                    </button>
-                    <button
-                      className="dropdown-action"
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        onQuickPaste();
-                      }}
-                    >
-                      <LinkIcon size={15} />
-                      <span>Paste Clipboard Link</span>
-                    </button>
-                    <div className="dropdown-sep" />
-                    <button
-                      className="dropdown-action"
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        handleBackupClick();
-                      }}
-                    >
-                      <HardDriveDownload size={15} />
-                      <span>Backup & Restore</span>
-                    </button>
-                    {onTestSound && (
-                      <button
-                        className="dropdown-action"
-                        onClick={() => {
-                          setIsMenuOpen(false);
-                          onTestSound();
-                        }}
-                      >
-                        <Volume2 size={15} />
-                        <span>Test Alert Sound</span>
-                      </button>
-                    )}
-                    {onRequestNotifications && (
-                      <button
-                        className="dropdown-action"
-                        onClick={() => {
-                          setIsMenuOpen(false);
-                          onRequestNotifications();
-                        }}
-                      >
-                        <Bell size={15} />
-                        <span>Notifications</span>
-                      </button>
-                    )}
-                    {installPromptAvailable && (
-                      <>
-                        <div className="dropdown-sep" />
-                        <button
-                          className="dropdown-action"
-                          style={{ color: 'var(--accent-cyan)' }}
-                          onClick={() => {
-                            setIsMenuOpen(false);
-                            onTriggerInstall?.();
-                          }}
-                        >
-                          <Download size={15} />
-                          <span>Install Mobile App</span>
-                        </button>
-                      </>
-                    )}
-                  </div>
+                {onOpenBackup && (
+                  <button
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      padding: '8px 10px',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '0.8rem',
+                      color: 'var(--on-surface)',
+                      cursor: 'pointer',
+                      width: '100%',
+                      textAlign: 'left'
+                    }}
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      onOpenBackup();
+                    }}
+                  >
+                    <HardDriveDownload size={15} style={{ color: 'var(--secondary)' }} />
+                    <span>Backup & Export JSON</span>
+                  </button>
+                )}
+
+                {onTestSound && (
+                  <button
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      padding: '8px 10px',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '0.8rem',
+                      color: 'var(--on-surface)',
+                      cursor: 'pointer',
+                      width: '100%',
+                      textAlign: 'left'
+                    }}
+                    onClick={() => {
+                      onTestSound();
+                    }}
+                  >
+                    <Volume2 size={15} style={{ color: 'var(--tertiary)' }} />
+                    <span>Test Reminder Chime</span>
+                  </button>
+                )}
+
+                {installPromptAvailable && onTriggerInstall && (
+                  <button
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      padding: '8px 10px',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '0.8rem',
+                      color: 'var(--primary)',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      width: '100%',
+                      textAlign: 'left'
+                    }}
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      onTriggerInstall();
+                    }}
+                  >
+                    <Download size={15} />
+                    <span>Install App on Phone</span>
+                  </button>
                 )}
               </div>
-            </div>
-          </>
-        )}
+            )}
+          </div>
+        </div>
       </div>
     </header>
   );

@@ -1,107 +1,95 @@
 import React, { useState } from 'react';
-import { FileText, Clock, Link as LinkIcon, ArrowRight, Sparkles } from 'lucide-react';
 import { ItemType } from '../types';
 
 interface QuickAddBarProps {
   onQuickSubmit: (text: string, type: ItemType, detectedUrl: string | null) => void;
   onOpenWithUrl: (url: string) => void;
+  searchQuery: string;
+  onSearchChange: (q: string) => void;
 }
 
-export const QuickAddBar: React.FC<QuickAddBarProps> = ({ onQuickSubmit, onOpenWithUrl }) => {
-  const [activeType, setActiveType] = useState<ItemType>('note');
-  const [text, setText] = useState('');
+export const QuickAddBar: React.FC<QuickAddBarProps> = ({
+  searchQuery,
+  onSearchChange
+}) => {
+  const [isListening, setIsListening] = useState(false);
 
-  const extractUrl = (str: string): string | null => {
-    const match = str.match(/(https?:\/\/[^\s]+)/i);
-    return match ? match[0] : null;
-  };
+  // Web Speech API Voice Recognition
+  const handleVoiceSearch = () => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
-  const detectedUrl = extractUrl(text);
-
-  const handleSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!text.trim()) return;
-
-    let finalType = activeType;
-    if (detectedUrl) {
-      finalType = /instagram\.com/i.test(detectedUrl) ? 'instagram' : 'link';
+    if (!SpeechRecognition) {
+      alert('Speech recognition is not supported in this browser.');
+      return;
     }
 
-    onQuickSubmit(text.trim(), finalType, detectedUrl);
-    setText('');
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => setIsListening(true);
+      recognition.onend = () => setIsListening(false);
+      recognition.onerror = () => setIsListening(false);
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        if (transcript) {
+          onSearchChange(transcript);
+        }
+      };
+
+      recognition.start();
+    } catch (e) {
+      console.warn('Speech error:', e);
+      setIsListening(false);
+    }
   };
 
   return (
-    <section className="capture-box">
-      <form onSubmit={handleSubmit} className="capture-form">
-        <div className="capture-type-row">
-          <button
-            type="button"
-            className={`capture-chip ${activeType === 'note' ? 'active' : ''}`}
-            onClick={() => setActiveType('note')}
-          >
-            <FileText size={13} />
-            <span>Note</span>
-          </button>
-          <button
-            type="button"
-            className={`capture-chip ${activeType === 'reminder' ? 'active' : ''}`}
-            onClick={() => setActiveType('reminder')}
-          >
-            <Clock size={13} />
-            <span>Reminder</span>
-          </button>
-          <button
-            type="button"
-            className={`capture-chip ${activeType === 'link' || activeType === 'instagram' ? 'active' : ''}`}
-            onClick={() => setActiveType('link')}
-          >
-            <LinkIcon size={13} />
-            <span>Link / Reel</span>
-          </button>
-        </div>
+    <div className="search-discovery-bar">
+      <div className="search-pill-container">
+        <span className="material-symbols-outlined" style={{ color: 'var(--outline)', fontSize: '20px' }}>
+          search
+        </span>
+        <input
+          id="searchInput"
+          type="text"
+          className="search-pill-input"
+          placeholder="Search notes, tags, or voice..."
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          autoComplete="off"
+        />
 
-        <div className="capture-input-row">
-          <input
-            type="text"
-            className="capture-input"
-            placeholder={
-              activeType === 'reminder'
-                ? 'Set a reminder... (e.g. Call dentist tomorrow at 4pm)'
-                : activeType === 'link'
-                ? 'Paste an Instagram reel or web URL...'
-                : 'Quick jot a note or thought...'
-            }
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            autoComplete="off"
-          />
-          <button type="submit" className="capture-submit-btn" title="Save" aria-label="Save">
-            <ArrowRight size={17} />
-          </button>
-        </div>
-
-        {detectedUrl && (
-          <div className="detected-link-bar">
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
-              <Sparkles size={13} style={{ color: 'var(--accent-cyan)' }} />
-              Link:
+        {searchQuery ? (
+          <button
+            type="button"
+            className="search-icon-btn"
+            onClick={() => onSearchChange('')}
+            title="Clear"
+            aria-label="Clear search"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+              close
             </span>
-            <span className="detected-link-text">{detectedUrl}</span>
-            <button
-              type="button"
-              className="strip-btn"
-              style={{ background: 'var(--accent-rose)', color: '#fff', border: 'none' }}
-              onClick={() => {
-                onOpenWithUrl(detectedUrl);
-                setText('');
-              }}
-            >
-              Preview & Save
-            </button>
-          </div>
-        )}
-      </form>
-    </section>
+          </button>
+        ) : null}
+
+        <button
+          type="button"
+          className={`search-icon-btn ${isListening ? 'recording' : ''}`}
+          onClick={handleVoiceSearch}
+          title={isListening ? 'Listening...' : 'Voice Search'}
+          aria-label="Voice search"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+            mic
+          </span>
+        </button>
+      </div>
+    </div>
   );
 };

@@ -1,7 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Item, ItemType, ColorAccent, PriorityLevel, RecurrenceRule, ChecklistTask, UrlMetadata } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Item,
+  ItemType,
+  ColorAccent,
+  PriorityLevel,
+  RecurrenceRule,
+  ChecklistTask,
+  UrlMetadata
+} from '../types';
 import { fetchUrlMetadataApi } from '../services/api';
-import { X, Loader2, Sparkles, Calendar, Tag, CheckSquare, Palette } from 'lucide-react';
 
 interface ItemModalProps {
   isOpen: boolean;
@@ -20,10 +27,12 @@ export const ItemModal: React.FC<ItemModalProps> = ({
 }) => {
   const [type, setType] = useState<ItemType>(defaultType);
   const [title, setTitle] = useState('');
+  const [deck, setDeck] = useState('');
   const [content, setContent] = useState('');
   const [url, setUrl] = useState('');
   const [tagsStr, setTagsStr] = useState('');
-  const [color, setColor] = useState<ColorAccent>('slate');
+  const [color, setColor] = useState<ColorAccent>('paper');
+  const [folder, setFolder] = useState<string>('Personal');
   const [isPinned, setIsPinned] = useState(false);
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState<PriorityLevel>('medium');
@@ -32,15 +41,20 @@ export const ItemModal: React.FC<ItemModalProps> = ({
   const [newChecklistText, setNewChecklistText] = useState('');
   const [metadata, setMetadata] = useState<UrlMetadata | null>(null);
   const [fetchingMeta, setFetchingMeta] = useState(false);
+  const [isDictating, setIsDictating] = useState(false);
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (editingItem) {
       setType(editingItem.type);
       setTitle(editingItem.title);
+      setDeck(editingItem.deck || '');
       setContent(editingItem.content || '');
       setUrl(editingItem.url || '');
       setTagsStr((editingItem.tags || []).join(', '));
-      setColor(editingItem.color || 'slate');
+      setColor(editingItem.color || 'paper');
+      setFolder(editingItem.folderId || 'Personal');
       setIsPinned(editingItem.is_pinned);
       setChecklist(editingItem.checklist || []);
       setMetadata(editingItem.metadata || null);
@@ -57,15 +71,16 @@ export const ItemModal: React.FC<ItemModalProps> = ({
     } else {
       setType(defaultType);
       setTitle('');
+      setDeck('');
       setContent('');
       setUrl('');
       setTagsStr('');
-      setColor(defaultType === 'instagram' ? 'rose' : (defaultType === 'link' ? 'cyan' : 'slate'));
+      setColor(defaultType === 'reminder' ? 'ochre' : 'paper');
+      setFolder('Personal');
       setIsPinned(false);
       setChecklist([]);
       setMetadata(null);
 
-      // Default due date to 2 hours from now
       const nextDate = new Date(Date.now() + 2 * 3600000);
       nextDate.setMinutes(nextDate.getMinutes() - nextDate.getTimezoneOffset());
       setDueDate(nextDate.toISOString().slice(0, 16));
@@ -76,8 +91,70 @@ export const ItemModal: React.FC<ItemModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleFetchPreview = async (overrideUrl?: string) => {
-    const targetUrl = (overrideUrl || url).trim();
+  // Word count & read time
+  const wordCount = content ? content.trim().split(/\s+/).filter(Boolean).length : 0;
+  const readTimeMins = Math.max(1, Math.ceil(wordCount / 200));
+
+  // Swatch tone color mapper
+  const getCanvasBackground = () => {
+    switch (color) {
+      case 'oat':
+        return 'var(--swatch-oat)';
+      case 'sage':
+        return 'var(--swatch-sage)';
+      case 'ochre':
+        return 'var(--swatch-ochre)';
+      case 'terracotta':
+        return 'var(--swatch-terracotta)';
+      case 'lilac':
+        return 'var(--swatch-lilac)';
+      default:
+        return 'var(--swatch-paper)';
+    }
+  };
+
+  // Web Speech API Voice Dictation
+  const toggleVoiceDictation = () => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert('Speech recognition is not supported in this browser.');
+      return;
+    }
+
+    if (isDictating) {
+      setIsDictating(false);
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => setIsDictating(true);
+      recognition.onend = () => setIsDictating(false);
+      recognition.onerror = () => setIsDictating(false);
+
+      recognition.onresult = (event: any) => {
+        const lastResult = event.results[event.results.length - 1];
+        if (lastResult && lastResult[0]) {
+          const spokenText = lastResult[0].transcript;
+          setContent((prev) => (prev ? `${prev} ${spokenText}` : spokenText));
+        }
+      };
+
+      recognition.start();
+    } catch (e) {
+      console.warn('Voice dictation error:', e);
+      setIsDictating(false);
+    }
+  };
+
+  const handleFetchPreview = async () => {
+    const targetUrl = url.trim();
     if (!targetUrl) return;
     setFetchingMeta(true);
     try {
@@ -88,25 +165,15 @@ export const ItemModal: React.FC<ItemModalProps> = ({
       }
       if (/instagram\.com/i.test(targetUrl)) {
         setType('instagram');
-        setColor('rose');
-      } else if (!type || type === 'note') {
+        setColor('terracotta');
+      } else {
         setType('link');
-        setColor('cyan');
+        setColor('ochre');
       }
     } catch (e) {
       console.warn('Metadata preview error:', e);
     } finally {
       setFetchingMeta(false);
-    }
-  };
-
-  const handleUrlChange = (newUrl: string) => {
-    setUrl(newUrl);
-    // If user pasted a full URL, auto-trigger metadata preview after a short debounce
-    if (/^https?:\/\//i.test(newUrl.trim()) && !metadata) {
-      if (/instagram\.com/i.test(newUrl)) {
-        setType('instagram');
-      }
     }
   };
 
@@ -116,14 +183,8 @@ export const ItemModal: React.FC<ItemModalProps> = ({
     setNewChecklistText('');
   };
 
-  const setPresetDueDate = (hoursAhead: number) => {
-    const d = new Date(Date.now() + hoursAhead * 3600000);
-    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-    setDueDate(d.toISOString().slice(0, 16));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
 
     const tags = tagsStr
       .split(',')
@@ -133,10 +194,12 @@ export const ItemModal: React.FC<ItemModalProps> = ({
     const itemData: Partial<Item> = {
       id: editingItem?.id,
       type,
-      title: title.trim() || (type === 'instagram' ? 'Saved Instagram Reel' : 'Untitled Note'),
+      title: title.trim() || (type === 'instagram' ? 'Saved Instagram Reel' : 'Untitled Thought'),
+      deck: deck.trim() || undefined,
       content: content.trim(),
       url: url.trim(),
       metadata: metadata || undefined,
+      folderId: folder,
       tags,
       color,
       is_pinned: isPinned,
@@ -150,145 +213,210 @@ export const ItemModal: React.FC<ItemModalProps> = ({
     }
 
     onSave(itemData);
+    onClose();
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: '1.2rem' }}>
-              {editingItem ? '✏️' : '✨'}
+    <div className="editor-overlay" onClick={onClose}>
+      <div
+        className="editor-sheet"
+        style={{ backgroundColor: getCanvasBackground() }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Top Breadcrumb & Status Navigation */}
+        <div className="editor-top-nav">
+          <div className="editor-breadcrumbs">
+            <button
+              type="button"
+              className="card-action-btn"
+              onClick={onClose}
+              title="Close editor"
+              aria-label="Back"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+                arrow_back
+              </span>
+            </button>
+            <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--primary)' }}>
+              folder_open
             </span>
-            <h3>{editingItem ? 'Edit Item' : 'Create New Item'}</h3>
+            <select
+              value={folder}
+              onChange={(e) => setFolder(e.target.value)}
+              style={{
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                color: 'var(--on-surface)',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="Personal">Personal</option>
+              <option value="Work & Drafts">Work & Drafts</option>
+              <option value="Book Ideas">Book Ideas</option>
+              <option value="Recipes">Recipes</option>
+              <option value="Archive">Archive</option>
+            </select>
           </div>
-          <button className="modal-close" onClick={onClose} aria-label="Close modal">
-            <X size={18} />
-          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="editor-autosave-status">
+              <span className="sync-pulse connected" />
+              <span>
+                {wordCount} words · {readTimeMins} min read
+              </span>
+            </div>
+
+            <button
+              type="button"
+              className={`card-action-btn ${isPinned ? 'active-pin' : ''}`}
+              onClick={() => setIsPinned(!isPinned)}
+              title={isPinned ? 'Unpin' : 'Pin note'}
+            >
+              <span
+                className="material-symbols-outlined"
+                style={{
+                  fontSize: '18px',
+                  fontVariationSettings: isPinned ? "'FILL' 1" : "'FILL' 0"
+                }}
+              >
+                push_pin
+              </span>
+            </button>
+          </div>
         </div>
 
-        {/* Type Switcher Tabs */}
-        <div className="modal-type-tabs">
-          <button
-            type="button"
-            className={`modal-tab ${type === 'note' ? 'active' : ''}`}
-            onClick={() => setType('note')}
-          >
-            <span>📝 Note</span>
-          </button>
-          <button
-            type="button"
-            className={`modal-tab ${type === 'reminder' ? 'active' : ''}`}
-            onClick={() => setType('reminder')}
-          >
-            <span>⏰ Reminder</span>
-          </button>
-          <button
-            type="button"
-            className={`modal-tab ${type === 'instagram' ? 'active' : ''}`}
-            onClick={() => { setType('instagram'); setColor('rose'); }}
-          >
-            <span>📸 Instagram Reel</span>
-          </button>
-          <button
-            type="button"
-            className={`modal-tab ${type === 'link' ? 'active' : ''}`}
-            onClick={() => { setType('link'); setColor('cyan'); }}
-          >
-            <span>🌐 Web Bookmark</span>
-          </button>
-        </div>
+        {/* Scrollable Paper Canvas */}
+        <div className="editor-scroll-area">
+          {/* Note Title Input */}
+          <input
+            type="text"
+            className="editor-title-input"
+            placeholder="Untitled Thought..."
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            autoFocus
+          />
 
-        <form onSubmit={handleSubmit} className="modal-form">
-          {/* URL Input (for Link and Instagram) */}
-          {(type === 'link' || type === 'instagram') && (
-            <div className="form-group">
-              <label htmlFor="formUrl">
-                {type === 'instagram' ? 'Instagram Reel or Post URL' : 'Website URL'}
-              </label>
-              <div className="url-fetch-wrap">
-                <input
-                  type="url"
-                  id="formUrl"
-                  placeholder={type === 'instagram' ? 'https://www.instagram.com/reel/C8qXYZ123/...' : 'https://example.com/article...'}
-                  value={url}
-                  onChange={(e) => handleUrlChange(e.target.value)}
-                  autoFocus
-                />
-                <button type="button" className="fetch-btn" onClick={() => handleFetchPreview()} disabled={fetchingMeta}>
-                  {fetchingMeta ? <Loader2 size={16} className="spinner" /> : <span>Fetch Preview</span>}
-                </button>
-              </div>
+          {/* Editorial Subtitle / Deck (Optional) */}
+          <input
+            type="text"
+            className="font-headline"
+            style={{
+              fontSize: '0.95rem',
+              color: 'var(--primary)',
+              fontStyle: 'italic',
+              width: '100%'
+            }}
+            placeholder="Add an editorial quote or subtitle... (optional)"
+            value={deck}
+            onChange={(e) => setDeck(e.target.value)}
+          />
 
-              {metadata && (
-                <div className="url-preview-box">
-                  {metadata.image && (
-                    <div className="preview-thumb-wrap">
-                      <img src={metadata.image} alt="Preview" />
-                    </div>
-                  )}
-                  <div className="preview-details">
-                    <span className="preview-site">{metadata.siteName || 'Scraped Link Details'}</span>
-                    <h5 className="preview-title">{metadata.title}</h5>
-                    {metadata.description && <p className="preview-desc">{metadata.description}</p>}
-                  </div>
-                </div>
-              )}
+          {/* Web URL / Instagram Link Field (if link/reel type) */}
+          {(type === 'link' || type === 'instagram' || url) && (
+            <div
+              style={{
+                display: 'flex',
+                gap: 8,
+                background: 'var(--surface-container-low)',
+                padding: '6px 12px',
+                borderRadius: 'var(--radius-md)',
+                alignItems: 'center'
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--primary)' }}>
+                link
+              </span>
+              <input
+                type="url"
+                style={{ flex: 1, fontSize: '0.85rem', color: 'var(--on-surface)' }}
+                placeholder="https://instagram.com/reel/... or web link"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+              />
+              <button
+                type="button"
+                className="editorial-chip"
+                style={{ padding: '3px 10px', fontSize: '0.72rem' }}
+                onClick={handleFetchPreview}
+                disabled={fetchingMeta}
+              >
+                {fetchingMeta ? 'Fetching...' : 'Preview'}
+              </button>
             </div>
           )}
 
-          {/* Title */}
-          <div className="form-group">
-            <label htmlFor="formTitle">Title</label>
-            <input
-              type="text"
-              id="formTitle"
-              placeholder="e.g. Project brainstorm / Doctor visit at 4 PM / Instagram Desk Setup"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-            />
-          </div>
+          {/* Note Body Textarea */}
+          <textarea
+            ref={textareaRef}
+            className="editor-body-textarea"
+            placeholder="Write freely. Your work is saved as you go..."
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+          />
 
-          {/* Content / Markdown Textarea */}
-          <div className="form-group">
-            <label htmlFor="formContent">Notes & Details (Markdown supported)</label>
-            <textarea
-              id="formContent"
-              rows={4}
-              placeholder="Type notes, key takeaways, links, or instructions..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-            />
-          </div>
+          {/* Interactive Checklists Section */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Checklist Tasks ({checklist.filter((c) => c.done).length}/{checklist.length})
+            </span>
 
-          {/* Interactive Checklist Manager */}
-          <div className="form-group">
-            <label>
-              <CheckSquare size={14} style={{ display: 'inline', marginRight: 4 }} />
-              Checklist Tasks ({checklist.length})
-            </label>
-            {checklist.length > 0 && (
-              <div className="checklist-items">
-                {checklist.map((item, idx) => (
-                  <div key={idx} className="checklist-form-item">
-                    <span>{item.text}</span>
-                    <button
-                      type="button"
-                      className="checklist-del-btn"
-                      onClick={() => setChecklist(checklist.filter((_, i) => i !== idx))}
-                      title="Remove task"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
+            {checklist.map((task, idx) => (
+              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span
+                  className={`custom-checkbox ${task.done ? 'checked' : ''}`}
+                  onClick={() => {
+                    const next = [...checklist];
+                    next[idx].done = !next[idx].done;
+                    setChecklist(next);
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
+                  {task.done && (
+                    <span className="material-symbols-outlined" style={{ fontSize: '12px', fontWeight: 700 }}>
+                      check
+                    </span>
+                  )}
+                </span>
+                <input
+                  type="text"
+                  style={{
+                    flex: 1,
+                    fontSize: '0.85rem',
+                    textDecoration: task.done ? 'line-through' : 'none',
+                    color: task.done ? 'var(--outline)' : 'var(--on-surface)'
+                  }}
+                  value={task.text}
+                  onChange={(e) => {
+                    const next = [...checklist];
+                    next[idx].text = e.target.value;
+                    setChecklist(next);
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setChecklist(checklist.filter((_, i) => i !== idx))}
+                  title="Remove task"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--outline)' }}>
+                    close
+                  </span>
+                </button>
               </div>
-            )}
-            <div className="checklist-add-row">
+            ))}
+
+            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
               <input
                 type="text"
-                placeholder="Add task and press Enter..."
+                style={{
+                  flex: 1,
+                  background: 'var(--surface-container-low)',
+                  padding: '6px 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '0.82rem',
+                  color: 'var(--on-surface)'
+                }}
+                placeholder="+ Add checklist task and press enter..."
                 value={newChecklistText}
                 onChange={(e) => setNewChecklistText(e.target.value)}
                 onKeyDown={(e) => {
@@ -298,132 +426,220 @@ export const ItemModal: React.FC<ItemModalProps> = ({
                   }
                 }}
               />
-              <button type="button" className="add-sub-btn" onClick={handleAddChecklistTask}>
-                + Add
+              <button
+                type="button"
+                className="editorial-chip"
+                onClick={handleAddChecklistTask}
+              >
+                Add
               </button>
             </div>
           </div>
 
-          {/* Reminder Specific Fields */}
-          {type === 'reminder' && (
-            <div className="reminder-fields">
-              <div className="form-group">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label htmlFor="formDueDate">
-                    <Calendar size={14} style={{ display: 'inline', marginRight: 4 }} />
-                    Due Date & Time
-                  </label>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button type="button" className="pill-btn secondary small" onClick={() => setPresetDueDate(1)}>
-                      +1h
-                    </button>
-                    <button type="button" className="pill-btn secondary small" onClick={() => setPresetDueDate(3)}>
-                      +3h
-                    </button>
-                    <button type="button" className="pill-btn secondary small" onClick={() => setPresetDueDate(24)}>
-                      Tomorrow
-                    </button>
-                  </div>
-                </div>
+          {/* Reminder Scheduler (if reminder type) */}
+          {(type === 'reminder' || dueDate) && (
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 10,
+                background: 'var(--surface-container-low)',
+                padding: '10px 14px',
+                borderRadius: 'var(--radius-md)',
+                marginTop: 8
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 200 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--primary)' }}>
+                  alarm
+                </span>
                 <input
                   type="datetime-local"
-                  id="formDueDate"
+                  style={{ fontSize: '0.82rem', color: 'var(--on-surface)', width: '100%' }}
                   value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
+                  onChange={(e) => {
+                    setDueDate(e.target.value);
+                    setType('reminder');
+                  }}
                 />
               </div>
 
-              <div className="form-row">
-                <div className="form-group flex-1">
-                  <label htmlFor="formPriority">Priority Level</label>
-                  <select
-                    id="formPriority"
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.value as PriorityLevel)}
-                  >
-                    <option value="low">🟢 Low Priority</option>
-                    <option value="medium">🟡 Medium Priority</option>
-                    <option value="high">🔴 High Priority (Urgent)</option>
-                  </select>
-                </div>
-                <div className="form-group flex-1">
-                  <label htmlFor="formRecurrence">Repeat Cycle</label>
-                  <select
-                    id="formRecurrence"
-                    value={recurrence}
-                    onChange={(e) => setRecurrence(e.target.value as RecurrenceRule)}
-                  >
-                    <option value="none">One-time (Does not repeat)</option>
-                    <option value="daily">Daily</option>
-                    <option value="weekdays">Weekdays (Mon-Fri)</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                  </select>
-                </div>
-              </div>
+              <select
+                value={recurrence}
+                onChange={(e) => setRecurrence(e.target.value as RecurrenceRule)}
+                style={{ fontSize: '0.8rem', color: 'var(--on-surface)', cursor: 'pointer' }}
+              >
+                <option value="none">Does not repeat</option>
+                <option value="daily">Daily</option>
+                <option value="weekdays">Every weekday</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+
+              <select
+                value={priority}
+                onChange={(e) => setPriority(e.target.value as PriorityLevel)}
+                style={{ fontSize: '0.8rem', color: 'var(--on-surface)', cursor: 'pointer' }}
+              >
+                <option value="low">Low Priority</option>
+                <option value="medium">Medium Priority</option>
+                <option value="high">High Priority</option>
+              </select>
             </div>
           )}
 
-          {/* Color & Tags */}
-          <div className="form-row">
-            <div className="form-group flex-1">
-              <label>
-                <Palette size={14} style={{ display: 'inline', marginRight: 4 }} />
-                Card Color Theme
-              </label>
-              <div className="color-picker-row">
-                {(['slate', 'emerald', 'cyan', 'amber', 'rose', 'violet'] as ColorAccent[]).map((c) => (
-                  <label key={c} className="color-radio" title={c}>
-                    <input
-                      type="radio"
-                      name="colorAccent"
-                      value={c}
-                      checked={color === c}
-                      onChange={() => setColor(c)}
-                    />
-                    <span className={`color-dot color-${c}`} />
-                  </label>
-                ))}
-              </div>
-            </div>
+          {/* Tags Input */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--outline)' }}>
+              tag
+            </span>
+            <input
+              type="text"
+              style={{ flex: 1, fontSize: '0.82rem', color: 'var(--on-surface)' }}
+              placeholder="Tags separated by commas (e.g. writing, ideas, draft)"
+              value={tagsStr}
+              onChange={(e) => setTagsStr(e.target.value)}
+            />
+          </div>
 
-            <div className="form-group flex-1">
-              <label htmlFor="formTags">
-                <Tag size={14} style={{ display: 'inline', marginRight: 4 }} />
-                Tags (comma separated)
-              </label>
-              <input
-                type="text"
-                id="formTags"
-                placeholder="Work, Ideas, Health, Instagram"
-                value={tagsStr}
-                onChange={(e) => setTagsStr(e.target.value)}
+          {/* Warm Pastel Swatch Palette Strip */}
+          <div className="swatches-strip">
+            <span style={{ fontSize: '0.72rem', color: 'var(--outline)', fontWeight: 600 }}>
+              Paper Tone:
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button
+                type="button"
+                className={`swatch-circle-btn ${color === 'paper' ? 'active' : ''}`}
+                style={{ background: 'var(--swatch-paper)' }}
+                onClick={() => setColor('paper')}
+                title="Paper White"
+              />
+              <button
+                type="button"
+                className={`swatch-circle-btn ${color === 'oat' ? 'active' : ''}`}
+                style={{ background: 'var(--swatch-oat)' }}
+                onClick={() => setColor('oat')}
+                title="Oat Linen"
+              />
+              <button
+                type="button"
+                className={`swatch-circle-btn ${color === 'sage' ? 'active' : ''}`}
+                style={{ background: 'var(--swatch-sage)' }}
+                onClick={() => setColor('sage')}
+                title="Muted Sage"
+              />
+              <button
+                type="button"
+                className={`swatch-circle-btn ${color === 'ochre' ? 'active' : ''}`}
+                style={{ background: 'var(--swatch-ochre)' }}
+                onClick={() => setColor('ochre')}
+                title="Warm Ochre"
+              />
+              <button
+                type="button"
+                className={`swatch-circle-btn ${color === 'terracotta' ? 'active' : ''}`}
+                style={{ background: 'var(--swatch-terracotta)' }}
+                onClick={() => setColor('terracotta')}
+                title="Soft Terracotta"
+              />
+              <button
+                type="button"
+                className={`swatch-circle-btn ${color === 'lilac' ? 'active' : ''}`}
+                style={{ background: 'var(--swatch-lilac)' }}
+                onClick={() => setColor('lilac')}
+                title="Dusty Lilac"
               />
             </div>
           </div>
+        </div>
 
-          {/* Pin Option */}
-          <div className="form-options-row">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={isPinned}
-                onChange={(e) => setIsPinned(e.target.checked)}
-              />
-              <span>📌 Pin this item to top of the feed</span>
-            </label>
+        {/* Bottom Formatting & Save Bar */}
+        <div className="editor-bottom-bar">
+          <div className="formatting-tools">
+            <button
+              type="button"
+              className="format-btn"
+              title="Add heading"
+              onClick={() => setContent((prev) => `${prev}\n### `)}
+            >
+              <span className="font-headline" style={{ fontWeight: 700, fontSize: '15px' }}>
+                H
+              </span>
+            </button>
+
+            <button
+              type="button"
+              className="format-btn"
+              title="Bold"
+              onClick={() => setContent((prev) => `${prev} **bold text** `)}
+            >
+              <strong style={{ fontSize: '14px' }}>B</strong>
+            </button>
+
+            <button
+              type="button"
+              className="format-btn"
+              title="Italic"
+              onClick={() => setContent((prev) => `${prev} _italic text_ `)}
+            >
+              <em className="font-headline" style={{ fontSize: '14px' }}>
+                I
+              </em>
+            </button>
+
+            <button
+              type="button"
+              className="format-btn"
+              title="Insert Checklist Item"
+              onClick={() => {
+                setChecklist([...checklist, { text: 'New task', done: false }]);
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+                checklist
+              </span>
+            </button>
+
+            <button
+              type="button"
+              className="format-btn"
+              title="Quote Callout"
+              onClick={() => setContent((prev) => `${prev}\n> “Spontaneous reflection...”\n`)}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+                format_quote
+              </span>
+            </button>
+
+            <button
+              type="button"
+              className={`format-btn ${isDictating ? 'text-primary' : ''}`}
+              title={isDictating ? 'Stop dictation' : 'Speech-to-text voice dictation'}
+              onClick={toggleVoiceDictation}
+            >
+              <span
+                className="material-symbols-outlined"
+                style={{
+                  fontSize: '18px',
+                  color: isDictating ? 'var(--error)' : 'var(--secondary)'
+                }}
+              >
+                {isDictating ? 'mic_off' : 'mic'}
+              </span>
+            </button>
           </div>
 
-          {/* Modal Footer */}
-          <div className="modal-footer">
-            <button type="button" className="pill-btn secondary" onClick={onClose}>
-              Cancel
-            </button>
-            <button type="submit" className="pill-btn primary">
-              {editingItem ? 'Save Changes' : 'Create Item'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              type="button"
+              className="editorial-chip active"
+              onClick={() => handleSubmit()}
+            >
+              Save & Close
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

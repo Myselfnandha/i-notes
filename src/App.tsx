@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { Item, ItemType, NetworkInfo, DeviceInfo, ToastMessage, SyncState, SortOption } from './types';
+import {
+  Item,
+  ItemType,
+  NetworkInfo,
+  DeviceInfo,
+  ToastMessage,
+  SyncState,
+  SortOption
+} from './types';
 import {
   fetchItemsApi,
   createItemApi,
@@ -11,22 +19,14 @@ import {
 } from './services/api';
 import { playReminderChime } from './services/audio';
 import { Header } from './components/Header';
-import { SyncBanner } from './components/SyncBanner';
 import { QuickAddBar } from './components/QuickAddBar';
 import { ItemCard } from './components/ItemCard';
 import { ItemModal } from './components/ItemModal';
 import { SyncModal } from './components/SyncModal';
+import { FloatingActionDock } from './components/FloatingActionDock';
+import { FoldersView } from './components/FoldersView';
 import { ToastContainer } from './components/Toast';
-import { FileText, Clock, Link as LinkIcon, Sparkles, Home, Pin, ArrowDownUp, Cloud } from 'lucide-react';
 import './styles/app.css';
-
-const InstagramIcon: React.FC<{ size?: number; style?: React.CSSProperties }> = ({ size = 18, style }) => (
-  <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" style={style}>
-    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-  </svg>
-);
 
 // Device detector for presence
 function detectDeviceInfo(): DeviceInfo {
@@ -58,6 +58,94 @@ function detectDeviceInfo(): DeviceInfo {
   };
 }
 
+const DEFAULT_EDITORIAL_NOTES: Item[] = [
+  {
+    id: 'sample_note_1',
+    sync_room: 'MAIN',
+    type: 'note',
+    title: 'Autumn Essay Outline',
+    deck: 'On the transition of morning light & silent walks',
+    content:
+      'The quiet shift begins not with the falling leaves, but in the colder tint of amber across the study floor at dawn. Gathering fragments of observation from the northern pond trail...',
+    tags: ['writing'],
+    color: 'paper',
+    folderId: 'Personal',
+    is_pinned: true,
+    is_completed: false,
+    created_at: Date.now() - 7200000,
+    updated_at: Date.now() - 7200000
+  },
+  {
+    id: 'sample_note_2',
+    sync_room: 'MAIN',
+    type: 'checklist',
+    title: 'Weekend Market List',
+    deck: 'Produce Row & Hearth Bakery',
+    content: '',
+    tags: ['groceries', 'personal'],
+    color: 'ochre',
+    folderId: 'Personal',
+    is_pinned: true,
+    is_completed: false,
+    checklist: [
+      { text: 'Chanterelle mushrooms (250g)', done: true },
+      { text: 'Country sourdough from Hearth & Crust', done: true },
+      { text: 'Salted French butter & flaky sea salt', done: false }
+    ],
+    created_at: Date.now() - 14400000,
+    updated_at: Date.now() - 14400000
+  },
+  {
+    id: 'sample_note_3',
+    sync_room: 'MAIN',
+    type: 'note',
+    title: 'Coffee Ritual',
+    deck: 'V60 Ethiopian Single Origin',
+    content:
+      '• 18g washed Ethiopia\n• 300g water at 93°C\n• 45s bloom (50g)\n• Target: 2m 45s finish',
+    tags: ['recipes', 'coffee'],
+    color: 'oat',
+    folderId: 'Recipes',
+    is_pinned: false,
+    is_completed: false,
+    created_at: Date.now() - 86400000,
+    updated_at: Date.now() - 86400000
+  },
+  {
+    id: 'sample_note_4',
+    sync_room: 'MAIN',
+    type: 'audio',
+    title: 'Design Sync Notes',
+    deck: 'Tactile Parchment Warmth',
+    content:
+      '“Realign tactile card elevations so parchment warmth leads visual priority over synthetic drop shadows...”',
+    audio_duration: '01:42',
+    tags: ['ideas', 'design'],
+    color: 'paper',
+    folderId: 'Work & Drafts',
+    is_pinned: false,
+    is_completed: false,
+    created_at: Date.now() - 18000000,
+    updated_at: Date.now() - 18000000
+  },
+  {
+    id: 'sample_note_5',
+    sync_room: 'MAIN',
+    type: 'note',
+    title: 'Book Shelf & Reading',
+    deck: 'Curated Bibliography',
+    content:
+      "• The Creative Act — Rick Rubin\n• In Praise of Shadows — Jun'ichirō Tanizaki\n• The Timeless Way of Building — Christopher Alexander",
+    tags: ['reading', 'inspiration'],
+    color: 'sage',
+    folderId: 'Book Ideas',
+    is_pinned: false,
+    is_completed: false,
+    created_at: Date.now() - 172800000,
+    updated_at: Date.now() - 172800000
+  }
+];
+
 export const App: React.FC = () => {
   // --- State ---
   const [room, setRoom] = useState<string>(() => {
@@ -68,15 +156,19 @@ export const App: React.FC = () => {
   });
 
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    return (localStorage.getItem('novasync_theme') as 'dark' | 'light') || 'dark';
+    return (localStorage.getItem('novasync_theme') as 'dark' | 'light') || 'light';
   });
 
   const [items, setItems] = useState<Item[]>(() => {
     try {
       const cached = localStorage.getItem(`novasync_cache_${room}`);
-      return cached ? JSON.parse(cached) : [];
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      return DEFAULT_EDITORIAL_NOTES;
     } catch {
-      return [];
+      return DEFAULT_EDITORIAL_NOTES;
     }
   });
 
@@ -85,8 +177,9 @@ export const App: React.FC = () => {
     itemsRef.current = items;
   }, [items]);
 
-  const [activeTab, setActiveTab] = useState<ItemType | 'all'>('all');
+  const [activeTab, setActiveTab] = useState<string>('all');
   const [activeTag, setActiveTag] = useState<string>('ALL');
+  const [activeFolder, setActiveFolder] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState<SortOption>('newest');
 
@@ -134,13 +227,16 @@ export const App: React.FC = () => {
   }, [items, room]);
 
   // --- Toast Trigger ---
-  const addToast = useCallback((type: ToastMessage['type'], title: string, desc?: string, duration = 4000) => {
-    const id = 'toast_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
-    setToasts((prev) => [...prev, { id, type, title, desc, duration }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, duration);
-  }, []);
+  const addToast = useCallback(
+    (type: ToastMessage['type'], title: string, desc?: string, duration = 3500) => {
+      const id = 'toast_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+      setToasts((prev) => [...prev, { id, type, title, desc, duration }]);
+      setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+      }, duration);
+    },
+    []
+  );
 
   // --- Service Worker & Web Share Target Listener ---
   useEffect(() => {
@@ -155,7 +251,7 @@ export const App: React.FC = () => {
     const sharedTitle = params.get('title');
 
     if (sharedUrl || sharedText) {
-      const detectedUrl = sharedUrl || (sharedText?.match(/https?:\/\/[^\s]+/i)?.[0]) || '';
+      const detectedUrl = sharedUrl || sharedText?.match(/https?:\/\/[^\s]+/i)?.[0] || '';
       const content = sharedText || '';
       const isIg = /instagram\.com/i.test(detectedUrl);
       const title = sharedTitle || (isIg ? 'Shared Instagram Reel' : detectedUrl ? 'Shared Bookmark' : 'Shared Note');
@@ -167,15 +263,16 @@ export const App: React.FC = () => {
           content: content !== detectedUrl ? content : '',
           url: detectedUrl,
           tags: ['Shared', isIg ? 'Instagram' : 'Mobile'],
-          color: isIg ? 'rose' : detectedUrl ? 'cyan' : 'emerald'
+          color: isIg ? 'terracotta' : detectedUrl ? 'ochre' : 'sage'
         });
         addToast('success', 'Shared Content Saved!', `"${title}" captured from mobile share.`);
-      }, 600);
+      }, 500);
 
-      window.history.replaceState({}, document.title, window.location.pathname + (room !== 'MAIN' ? `?room=${room}` : ''));
-    } else if (params.get('shared') === 'success') {
-      addToast('success', 'Shared Content Saved!', 'New item automatically captured and synced across your devices.');
-      window.history.replaceState({}, document.title, window.location.pathname + (room !== 'MAIN' ? `?room=${room}` : ''));
+      window.history.replaceState(
+        {},
+        document.title,
+        window.location.pathname + (room !== 'MAIN' ? `?room=${room}` : '')
+      );
     }
 
     // PWA Install listener
@@ -248,10 +345,8 @@ export const App: React.FC = () => {
       let wsUrl = '';
 
       if (customBase && customBase.startsWith('http')) {
-        // Custom self-hosted server
         wsUrl = customBase.replace(/^https:\/\//, 'wss://').replace(/^http:\/\//, 'ws://') + '/ws';
       } else {
-        // 24/7 Global Cloud Relay (Zero local server needed, free worldwide channel)
         wsUrl = `wss://itty.ws/c/novasync_${encodeURIComponent(room).toLowerCase()}`;
       }
 
@@ -264,7 +359,6 @@ export const App: React.FC = () => {
           if (isDisposed) return;
           setSyncState('connected');
 
-          // 1. Join room
           socket.send(
             JSON.stringify({
               action: 'join_room',
@@ -273,7 +367,6 @@ export const App: React.FC = () => {
             })
           );
 
-          // 2. Request state from any peer device currently online in the room
           socket.send(
             JSON.stringify({
               action: 'request_state',
@@ -282,7 +375,6 @@ export const App: React.FC = () => {
             })
           );
 
-          // 3. Ping for latency calculation
           pingTimestampRef.current = performance.now();
           socket.send(JSON.stringify({ action: 'ping' }));
         };
@@ -299,22 +391,18 @@ export const App: React.FC = () => {
             } else if (msg.action === 'presence_update') {
               setConnectedDevices(msg.devices || []);
             } else if (raw.type === 'join') {
-              // itty.ws join event: update presence count
               setConnectedDevices((prev) => {
                 if (prev.some((d) => d.id === deviceInfo.id)) return prev;
                 return [deviceInfo, ...prev];
               });
-              // Send current state to newly joined device
               if (itemsRef.current && itemsRef.current.length > 0) {
                 socket.send(JSON.stringify({ action: 'sync_state', room, items: itemsRef.current }));
               }
             } else if (msg.action === 'request_state') {
-              // A peer requested our state
               if (itemsRef.current && itemsRef.current.length > 0) {
                 socket.send(JSON.stringify({ action: 'sync_state', room, items: itemsRef.current }));
               }
             } else if (msg.action === 'sync_state' && Array.isArray(msg.items)) {
-              // Reconcile and merge state with peer
               setItems((prev) => {
                 const map = new Map<string, Item>();
                 prev.forEach((i) => map.set(i.id, i));
@@ -362,7 +450,6 @@ export const App: React.FC = () => {
 
     connectWebSocket();
 
-    // Heartbeat every 25 seconds
     heartbeatIntervalRef.current = setInterval(() => {
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         pingTimestampRef.current = performance.now();
@@ -431,7 +518,6 @@ export const App: React.FC = () => {
     }
     setIsItemModalOpen(false);
 
-    // Broadcast over WebSocket to all other devices in the room
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(
         JSON.stringify({
@@ -516,58 +602,19 @@ export const App: React.FC = () => {
     addToast('info', 'Snoozed', `Reminder snoozed for ${mins} minutes.`);
   };
 
-  const handleQuickSubmit = async (text: string, type: ItemType, detectedUrl: string | null) => {
-    const itemData: Partial<Item> = {
-      type,
-      title: text.slice(0, 100),
-      content: text,
-      url: detectedUrl || '',
-      color: type === 'instagram' ? 'rose' : type === 'link' ? 'cyan' : 'slate'
-    };
-
-    if (type === 'reminder') {
-      itemData.due_date = new Date(Date.now() + 2 * 3600000).toISOString();
-    }
-
-    await handleSaveItem(itemData);
-  };
-
-  const handleQuickPaste = async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      const match = text.match(/(https?:\/\/[^\s]+)/i);
-      const url = match ? match[0] : null;
-
-      if (url) {
-        setEditingItem(null);
-        setModalDefaultType(/instagram\.com/i.test(url) ? 'instagram' : 'link');
-        setIsItemModalOpen(true);
-        addToast('info', 'Pasted Link', 'Fetching preview...');
-      } else {
-        setEditingItem(null);
-        setModalDefaultType('note');
-        setIsItemModalOpen(true);
-      }
-    } catch {
-      setEditingItem(null);
-      setModalDefaultType('link');
-      setIsItemModalOpen(true);
-    }
-  };
-
   const handleTriggerInstall = () => {
     if (deferredPromptRef.current) {
       deferredPromptRef.current.prompt();
       deferredPromptRef.current.userChoice.then((choice: any) => {
         if (choice.outcome === 'accepted') {
-          addToast('success', 'Installing App...', 'NovaSync added to your device Home Screen!');
+          addToast('success', 'Installing App...', 'Folio added to your device Home Screen!');
         }
         deferredPromptRef.current = null;
         setInstallPromptAvailable(false);
       });
     } else {
       alert(
-        'To install NovaSync on Mobile:\n\n📱 Android: Tap the 3 dots (⋮) in Chrome → Tap "Install app" or "Add to Home screen".\n\n🍎 iOS / iPhone: Tap the Share icon at the bottom of Safari → Tap "Add to Home Screen".'
+        'To install Folio on Mobile:\n\n📱 Android: Tap the 3 dots (⋮) in Chrome → Tap "Install app" or "Add to Home screen".\n\n🍎 iOS / iPhone: Tap the Share icon at the bottom of Safari → Tap "Add to Home Screen".'
       );
     }
   };
@@ -596,8 +643,20 @@ export const App: React.FC = () => {
   const filteredItems = useMemo(() => {
     let list = [...items];
 
-    if (activeTab !== 'all') {
-      list = list.filter((i) => i.type === activeTab);
+    if (activeTab === 'pinned') {
+      list = list.filter((i) => i.is_pinned);
+    } else if (activeTab === 'checklists') {
+      list = list.filter((i) => (i.checklist?.length || 0) > 0 || i.type === 'checklist');
+    } else if (activeTab === 'reminders') {
+      list = list.filter((i) => i.type === 'reminder' || Boolean(i.due_date));
+    } else if (activeTab === 'links') {
+      list = list.filter((i) => i.type === 'link' || i.type === 'instagram');
+    } else if (activeTab === 'audio') {
+      list = list.filter((i) => i.type === 'audio');
+    }
+
+    if (activeFolder) {
+      list = list.filter((i) => i.folderId === activeFolder);
     }
 
     if (activeTag !== 'ALL') {
@@ -635,235 +694,263 @@ export const App: React.FC = () => {
     });
 
     return list;
-  }, [items, activeTab, activeTag, searchQuery, sortOrder]);
+  }, [items, activeTab, activeFolder, activeTag, searchQuery, sortOrder]);
 
   const pinnedItems = useMemo(() => filteredItems.filter((i) => i.is_pinned), [filteredItems]);
   const otherItems = useMemo(() => filteredItems.filter((i) => !i.is_pinned), [filteredItems]);
 
   return (
-    <div className="app-root">
-      {/* Top Navbar */}
+    <div className="font-body" style={{ minHeight: '100dvh', background: 'var(--surface)' }}>
+      {/* Editorial Top Masthead */}
       <Header
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        onOpenSyncModal={() => setIsSyncModalOpen(true)}
-        onOpenCreateModal={() => {
+        onOpenSync={() => setIsSyncModalOpen(true)}
+        onOpenCreate={() => {
           setEditingItem(null);
           setModalDefaultType('note');
           setIsItemModalOpen(true);
         }}
-        onQuickPaste={handleQuickPaste}
-        onRequestNotifications={() => {
-          if ('Notification' in window) {
-            Notification.requestPermission().then((p) => {
-              if (p === 'granted') addToast('success', 'Notifications Active', 'Browser alerts enabled.');
-            });
-          }
-        }}
-        onTestSound={() => {
-          playReminderChime();
-          addToast('info', 'Harmonic Alert Chime', 'Sound synthesizer test successful.');
-        }}
-        onOpenBackupModal={() => setIsSyncModalOpen(true)}
         onToggleTheme={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
         theme={theme}
         syncState={syncState}
+        room={room}
         connectedCount={connectedDevices.length || 1}
-        latencyMs={latencyMs}
-        pendingOfflineCount={0}
+        onOpenBackup={() => setIsSyncModalOpen(true)}
+        onTestSound={playReminderChime}
         installPromptAvailable={installPromptAvailable}
         onTriggerInstall={handleTriggerInstall}
       />
 
-      {/* Main Layout */}
-      <main className="main-layout">
-        {/* Unified 24/7 Cloud Sync Banner */}
-        <SyncBanner
-          room={room}
-          syncUrl={networkInfo?.syncUrl || ''}
-          syncState={syncState}
-          latencyMs={latencyMs}
-          connectedCount={connectedDevices.length || 1}
-          onOpenSyncModal={() => setIsSyncModalOpen(true)}
-          onCopySyncLink={() => {
-            if (networkInfo?.syncUrl) {
-              navigator.clipboard.writeText(networkInfo.syncUrl);
-              addToast('success', 'Link Copied!', 'Device sync link copied.');
-            } else {
-              setIsSyncModalOpen(true);
-            }
+      {/* Search & Quick Discovery Bar */}
+      <QuickAddBar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onQuickSubmit={() => {}}
+        onOpenWithUrl={() => {}}
+      />
+
+      {/* Horizontal Filter Chips */}
+      <div className="filter-chips-scroll">
+        <button
+          type="button"
+          className={`editorial-chip ${activeTab === 'all' && !activeFolder && activeTag === 'ALL' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveTab('all');
+            setActiveFolder(null);
+            setActiveTag('ALL');
           }}
-        />
+        >
+          All Notes
+          <span className="chip-count">{items.length}</span>
+        </button>
 
-        {/* Urgent Reminder Alert */}
-        {urgentReminder && (
-          <div className="urgent-alert">
-            <div className="urgent-icon">🔔</div>
-            <div className="urgent-info">
-              <h4>Reminder: {urgentReminder.title}</h4>
-              <p>Due now or imminent! Click to complete or snooze.</p>
-            </div>
-            <div className="urgent-actions">
-              <button className="pill-btn small" onClick={() => handleSnooze(urgentReminder.id, 15)}>
-                Snooze 15m
-              </button>
-              <button className="pill-btn small success" onClick={() => handleToggleComplete(urgentReminder.id)}>
-                Complete ✓
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Quick Add Bar */}
-        <QuickAddBar
-          onQuickSubmit={handleQuickSubmit}
-          onOpenWithUrl={(url) => {
-            setEditingItem(null);
-            setModalDefaultType(/instagram\.com/i.test(url) ? 'instagram' : 'link');
-            setIsItemModalOpen(true);
+        <button
+          type="button"
+          className={`editorial-chip ${activeTab === 'pinned' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveTab('pinned');
+            setActiveFolder(null);
           }}
-        />
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>
+            push_pin
+          </span>
+          Pinned
+          <span className="chip-count">{items.filter((i) => i.is_pinned).length}</span>
+        </button>
 
-        {/* Navigation Categories Tabs */}
-        <nav className="categories-nav">
-          <div className="tabs-list">
-            <button
-              className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`}
-              onClick={() => setActiveTab('all')}
-            >
-              <span className="tab-label">All Items</span>
-              <span className="tab-count">{items.length}</span>
-            </button>
-            <button
-              className={`tab-btn ${activeTab === 'note' ? 'active' : ''}`}
-              onClick={() => setActiveTab('note')}
-            >
-              <FileText size={15} style={{ marginRight: 4 }} />
-              <span className="tab-label">Notes</span>
-              <span className="tab-count">{items.filter((i) => i.type === 'note').length}</span>
-            </button>
-            <button
-              className={`tab-btn ${activeTab === 'reminder' ? 'active' : ''}`}
-              onClick={() => setActiveTab('reminder')}
-            >
-              <Clock size={15} style={{ marginRight: 4 }} />
-              <span className="tab-label">Reminders</span>
-              <span className="tab-count">{items.filter((i) => i.type === 'reminder').length}</span>
-            </button>
-            <button
-              className={`tab-btn ${activeTab === 'instagram' ? 'active' : ''}`}
-              onClick={() => setActiveTab('instagram')}
-            >
-              <InstagramIcon size={15} style={{ marginRight: 4 }} />
-              <span className="tab-label">Instagram</span>
-              <span className="tab-count">{items.filter((i) => i.type === 'instagram').length}</span>
-            </button>
-            <button
-              className={`tab-btn ${activeTab === 'link' ? 'active' : ''}`}
-              onClick={() => setActiveTab('link')}
-            >
-              <LinkIcon size={15} style={{ marginRight: 4 }} />
-              <span className="tab-label">Saved Links</span>
-              <span className="tab-count">{items.filter((i) => i.type === 'link').length}</span>
-            </button>
-          </div>
+        <button
+          type="button"
+          className={`editorial-chip ${activeTab === 'checklists' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveTab('checklists');
+            setActiveFolder(null);
+          }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>
+            checklist
+          </span>
+          Checklists
+          <span className="chip-count">
+            {items.filter((i) => (i.checklist?.length || 0) > 0 || i.type === 'checklist').length}
+          </span>
+        </button>
 
-          {/* Tags Filter */}
-          <div className="tags-filter-bar">
-            <span className="tags-label">Tags:</span>
-            <button
-              className={`tag-pill ${activeTag === 'ALL' ? 'active' : ''}`}
-              onClick={() => setActiveTag('ALL')}
-            >
-              All
-            </button>
-            {allTags.map((tag) => (
-              <button
-                key={tag}
-                className={`tag-pill ${activeTag === tag ? 'active' : ''}`}
-                onClick={() => setActiveTag(tag)}
-              >
-                #{tag}
-              </button>
-            ))}
-          </div>
-        </nav>
+        <button
+          type="button"
+          className={`editorial-chip ${activeTab === 'reminders' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveTab('reminders');
+            setActiveFolder(null);
+          }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>
+            alarm
+          </span>
+          Reminders
+          <span className="chip-count">
+            {items.filter((i) => i.type === 'reminder' || Boolean(i.due_date)).length}
+          </span>
+        </button>
 
-        {/* Items Section */}
-        <section className="items-section">
-          <div className="section-subheader">
-            <div className="active-filter-title">
-              {activeTab === 'all' && 'All Items'}
-              {activeTab === 'note' && 'Notes'}
-              {activeTab === 'reminder' && 'Reminders'}
-              {activeTab === 'instagram' && 'Instagram Reels & Posts'}
-              {activeTab === 'link' && 'Saved Links'}
-              {activeTag !== 'ALL' && ` • #${activeTag}`}
-              {searchQuery && ` • Search: "${searchQuery}"`}
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft: 8 }}>
-                ({filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'})
-              </span>
-            </div>
+        <button
+          type="button"
+          className={`editorial-chip ${activeTab === 'links' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveTab('links');
+            setActiveFolder(null);
+          }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>
+            link
+          </span>
+          Links & Reels
+          <span className="chip-count">
+            {items.filter((i) => i.type === 'link' || i.type === 'instagram').length}
+          </span>
+        </button>
 
-            {/* Sort Selector Dropdown */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <ArrowDownUp size={14} style={{ color: 'var(--text-muted)' }} />
-              <select
-                className="sort-select"
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value as SortOption)}
-                aria-label="Sort items"
-              >
-                <option value="newest">Newest First</option>
-                <option value="oldest">Oldest First</option>
-                <option value="due">Due Date</option>
-                <option value="priority">Priority</option>
-                <option value="alphabetical">Title A-Z</option>
-              </select>
-            </div>
-          </div>
+        <button
+          type="button"
+          className={`editorial-chip ${activeTab === 'folders' ? 'active' : ''}`}
+          onClick={() => setActiveTab('folders')}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>
+            folder
+          </span>
+          Folders & Vault
+        </button>
 
-          {/* Pinned Items Section */}
-          {pinnedItems.length > 0 && (
-            <div className="pinned-section">
-              <div className="section-divider-label">
-                <Pin size={13} style={{ display: 'inline', marginRight: 4 }} />
-                PINNED ITEMS ({pinnedItems.length})
+        {allTags.slice(0, 6).map((tag) => (
+          <button
+            key={tag}
+            type="button"
+            className={`editorial-chip ${activeTag === tag ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTag(activeTag === tag ? 'ALL' : tag);
+              setActiveTab('all');
+            }}
+          >
+            #{tag}
+          </button>
+        ))}
+      </div>
+
+      {/* Main Canvas View */}
+      <main className="app-main-canvas">
+        {activeTab === 'folders' ? (
+          <FoldersView
+            items={items}
+            activeFolder={activeFolder}
+            onSelectFolder={(f) => {
+              setActiveFolder(f);
+              if (f) setActiveTab('all');
+            }}
+            onSelectTag={(t) => {
+              setActiveTag(t);
+              setActiveTab('all');
+            }}
+            onOpenCreate={() => {
+              setEditingItem(null);
+              setModalDefaultType('note');
+              setIsItemModalOpen(true);
+            }}
+            onSelectQuickFilter={(qf) => {
+              if (qf === 'pinned') setActiveTab('pinned');
+              else if (qf === 'reminders') setActiveTab('reminders');
+              else if (qf === 'audio') setActiveTab('audio');
+              else setActiveTab('all');
+            }}
+          />
+        ) : (
+          <>
+            {/* Feed Section Header with Sorting */}
+            <div className="feed-section-header">
+              <div className="feed-section-title">
+                {activeFolder ? (
+                  <>
+                    <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--primary)' }}>
+                      folder_open
+                    </span>
+                    <span>{activeFolder}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--primary)' }}>
+                      notes
+                    </span>
+                    <span>Recent Notes</span>
+                  </>
+                )}
+                <span style={{ color: 'var(--outline)', fontWeight: 400, marginLeft: 4 }}>
+                  ({filteredItems.length})
+                </span>
               </div>
-              <div className="items-grid">
-                {pinnedItems.map((item) => (
-                  <ItemCard
-                    key={item.id}
-                    item={item}
-                    onEdit={(it) => {
-                      setEditingItem(it);
-                      setIsItemModalOpen(true);
-                    }}
-                    onDelete={handleDeleteItem}
-                    onTogglePin={handleTogglePin}
-                    onToggleComplete={handleToggleComplete}
-                    onToggleChecklist={handleToggleChecklist}
-                    onSnooze={handleSnooze}
-                    onTagClick={(t) => setActiveTag(t)}
-                    onCopyUrl={(u) => {
-                      navigator.clipboard.writeText(u);
-                      addToast('success', 'Copied!', 'Link copied to clipboard.');
-                    }}
-                  />
-                ))}
+
+              {/* Sort Dropdown */}
+              <div className="sort-dropdown">
+                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
+                  sort
+                </span>
+                <select
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value as SortOption)}
+                  style={{
+                    fontSize: '0.74rem',
+                    fontWeight: 600,
+                    color: 'var(--primary)',
+                    cursor: 'pointer'
+                  }}
+                  aria-label="Sort notes"
+                >
+                  <option value="newest">Sort by Date</option>
+                  <option value="oldest">Oldest First</option>
+                  <option value="due">Due Date</option>
+                  <option value="priority">Priority</option>
+                  <option value="alphabetical">Title A-Z</option>
+                </select>
               </div>
             </div>
-          )}
 
-          {/* Other Items Section */}
-          {otherItems.length > 0 && (
-            <div className="other-items-section" style={{ marginTop: pinnedItems.length > 0 ? 20 : 0 }}>
-              {pinnedItems.length > 0 && (
-                <div className="section-divider-label">
-                  OTHER ITEMS ({otherItems.length})
+            {/* Pinned Section */}
+            {pinnedItems.length > 0 && activeTab !== 'pinned' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.72rem', color: 'var(--primary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
+                    push_pin
+                  </span>
+                  <span>Pinned ({pinnedItems.length})</span>
                 </div>
-              )}
-              <div className="items-grid">
+                <div className="masonry-grid">
+                  {pinnedItems.map((item) => (
+                    <ItemCard
+                      key={item.id}
+                      item={item}
+                      onEdit={(it) => {
+                        setEditingItem(it);
+                        setIsItemModalOpen(true);
+                      }}
+                      onDelete={handleDeleteItem}
+                      onTogglePin={handleTogglePin}
+                      onToggleComplete={handleToggleComplete}
+                      onToggleChecklist={handleToggleChecklist}
+                      onSnooze={handleSnooze}
+                      onTagClick={(t) => setActiveTag(t)}
+                      onCopyUrl={(u) => {
+                        navigator.clipboard.writeText(u);
+                        addToast('success', 'Copied!', 'Link copied.');
+                      }}
+                      onPlayChime={playReminderChime}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Other / All Recent Notes Masonry Grid */}
+            {otherItems.length > 0 && (
+              <div className="masonry-grid">
                 {otherItems.map((item) => (
                   <ItemCard
                     key={item.id}
@@ -880,81 +967,71 @@ export const App: React.FC = () => {
                     onTagClick={(t) => setActiveTag(t)}
                     onCopyUrl={(u) => {
                       navigator.clipboard.writeText(u);
-                      addToast('success', 'Copied!', 'Link copied to clipboard.');
+                      addToast('success', 'Copied!', 'Link copied.');
                     }}
+                    onPlayChime={playReminderChime}
                   />
                 ))}
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Empty State */}
-          {filteredItems.length === 0 && (
-            <div className="empty-state">
-              <div className="empty-icon-wrap">
-                <Sparkles size={36} />
-              </div>
-              <h3>No items found</h3>
-              <p>Jot a note, schedule a reminder, or paste an Instagram link above.</p>
-              <button
-                className="action-btn primary-btn"
-                onClick={() => {
-                  setEditingItem(null);
-                  setModalDefaultType('note');
-                  setIsItemModalOpen(true);
+            {/* Empty State */}
+            {filteredItems.length === 0 && (
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '48px 16px',
+                  borderRadius: 'var(--radius-card)',
+                  background: 'var(--surface-container-low)',
+                  border: '1px dashed var(--card-hairline)',
+                  marginTop: 16
                 }}
               >
-                + Create First Item
-              </button>
-            </div>
-          )}
-        </section>
+                <span className="material-symbols-outlined" style={{ fontSize: '38px', color: 'var(--primary)', opacity: 0.8 }}>
+                  auto_awesome
+                </span>
+                <h3 className="font-headline" style={{ fontSize: '1.25rem', marginTop: 8, color: 'var(--on-surface)' }}>
+                  No entries found
+                </h3>
+                <p style={{ fontSize: '0.82rem', color: 'var(--outline)', marginTop: 4, maxWidth: 360, marginInline: 'auto' }}>
+                  Write a thought, build a checklist, schedule a reminder, or paste a link below.
+                </p>
+                <button
+                  type="button"
+                  className="editorial-chip active"
+                  style={{ marginTop: 16, padding: '8px 18px', fontSize: '0.84rem' }}
+                  onClick={() => {
+                    setEditingItem(null);
+                    setModalDefaultType('note');
+                    setIsItemModalOpen(true);
+                  }}
+                >
+                  + Create First Thought
+                </button>
+              </div>
+            )}
+          </>
+        )}
       </main>
 
-      {/* Mobile Bottom Navigation Bar */}
-      <div className="mobile-bottom-bar">
-        <button
-          className={`mobile-nav-btn ${activeTab === 'all' ? 'active' : ''}`}
-          onClick={() => setActiveTab('all')}
-        >
-          <Home size={20} />
-          <span>Home</span>
-        </button>
-        <button
-          className={`mobile-nav-btn ${activeTab === 'note' ? 'active' : ''}`}
-          onClick={() => setActiveTab('note')}
-        >
-          <FileText size={20} />
-          <span>Notes</span>
-        </button>
-        <button
-          className="mobile-fab"
-          onClick={() => {
-            setEditingItem(null);
-            setModalDefaultType('note');
-            setIsItemModalOpen(true);
-          }}
-          title="New Item"
-        >
-          +
-        </button>
-        <button
-          className={`mobile-nav-btn ${activeTab === 'reminder' ? 'active' : ''}`}
-          onClick={() => setActiveTab('reminder')}
-        >
-          <Clock size={20} />
-          <span>Alerts</span>
-        </button>
-        <button
-          className={`mobile-nav-btn ${activeTab === 'instagram' ? 'active' : ''}`}
-          onClick={() => setActiveTab('instagram')}
-        >
-          <InstagramIcon size={20} />
-          <span>Links</span>
-        </button>
-      </div>
+      {/* Tactile Floating Action Dock (Above Bottom Safe Area) */}
+      <FloatingActionDock
+        onOpenCreate={(type) => {
+          setEditingItem(null);
+          setModalDefaultType(type);
+          setIsItemModalOpen(true);
+        }}
+        onQuickSaveText={(text, type) => {
+          handleSaveItem({
+            type,
+            title: text.slice(0, 80),
+            content: text,
+            color: type === 'reminder' ? 'ochre' : 'paper'
+          });
+        }}
+      />
 
-      {/* Create / Edit Modal */}
+      {/* Note Editor Modal */}
       <ItemModal
         isOpen={isItemModalOpen}
         onClose={() => setIsItemModalOpen(false)}
@@ -963,7 +1040,7 @@ export const App: React.FC = () => {
         defaultType={modalDefaultType}
       />
 
-      {/* Sync Modal */}
+      {/* Sync & Device Pairing Modal */}
       <SyncModal
         isOpen={isSyncModalOpen}
         onClose={() => setIsSyncModalOpen(false)}
