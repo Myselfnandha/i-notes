@@ -1,5 +1,24 @@
 # ZeroGravity OS Changelog
 
+## 1.1.8 (2026-10-18)
+
+### Enhancements & Global Rules Auto-Sync
+- **Universal Global Rules Sync**: Updated CLI (`bin/cli.js`) and installer (`pack.sh`) to always synchronize core rules (`core.md`, `effort.md`) and all 23 slash workflows directly into `~/.gemini/config/` on any install or update. This guarantees baseline reasoning invariants apply across all workspaces (e.g. Pocket, new projects).
+- **Clean Global Overwrites**: Removed legacy `.bak` directory creation during global installation.
+
+## 1.1.7 (2026-10-17)
+
+### Fixes & Clean Overwrite
+- **Clean Workspace Overwrite**: Removed `.agents.bak.<timestamp>` folder creation when overriding `.agents/` via `npx @nandhaalagesan/zerogravity` or `install.sh`. Overwriting now cleanly replaces target workspace components without leaving backup clutter behind.
+- **Zero-Binary Packaging**: Added automated `prepack` purge for bytecode and database caches, ensuring clean, quarantine-free npm package delivery.
+- **CLI Output Cleanups**: Updated dry-run update messages to accurately reflect in-place updates.
+
+## 1.1.6 (2026-10-17)
+
+### Fixes & Clean Overwrite
+- **Clean Workspace Overwrite**: Removed `.agents.bak.<timestamp>` folder creation when overriding `.agents/` via `npx @nandhaalagesan/zerogravity` or `install.sh`. Overwriting now cleanly replaces target workspace components without leaving backup clutter behind.
+- **CLI Output Cleanups**: Updated dry-run update messages to accurately reflect in-place updates.
+
 ## 1.1.5 (2026-10-17)
 
 ### Highlights & Reasoning Effort Optimization

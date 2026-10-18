@@ -64,14 +64,19 @@ jobs:
       - name: Prepare APK Artifact
         run: |
           mkdir -p release-assets
-          cp android/app/build/outputs/apk/debug/app-debug.apk release-assets/iNotes-v1.0.0-debug.apk
+          VERSION_TAG="${{ github.event.inputs.release_tag || github.ref_name }}"
+          if [ -z "$VERSION_TAG" ] || [ "$VERSION_TAG" = "main" ]; then
+            VERSION_TAG="v1.0.1"
+          fi
+          cp android/app/build/outputs/apk/debug/app-debug.apk release-assets/iNotes-${VERSION_TAG}-debug.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk release-assets/iNotes-latest.apk
           ls -la release-assets/
 
       - name: Upload APK Artifact to Run
         uses: actions/upload-artifact@v4
         with:
           name: iNotes-Android-APK
-          path: release-assets/iNotes-v1.0.0-debug.apk
+          path: release-assets/
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
@@ -85,9 +90,10 @@ jobs:
             ### 📜 i Notes — Warm Editorial Archival System (Android APK)
             
             This release packages the native Android application featuring:
-            - **Warm Editorial Stationery Home Screen Widget (4x2 / 4x3)**:
+            - **Fixed Warm Editorial Home Screen Widget (4x2 / 4x3)**:
+              - Fixed RemoteViews inflation issue (`InflateException` from bare `<View>` tags replaced with RemoteViews-compliant `<FrameLayout>`).
               - Unbleached parchment aesthetic with deckled hairline borders.
-              - **Seamless blank typing area**: tap the widget space directly on your home screen to instantly bring up the keyboard and a translucent stationery card.
+              - **Seamless blank typing area**: tap the widget space directly on your home screen to instantly bring up the keyboard and a native translucent stationery card dialog.
               - Saves immediately to the local vault and dismisses back to your home screen without entering the full app.
             - **Background Cloud & Local Sync**:
               - Automatically merges widget notes into the local IndexedDB vault.
@@ -95,6 +101,6 @@ jobs:
             - **Full Editorial Canvas**:
               - Newsreader serif typography, 6 paper wash swatches dock, audio memos, and structured checklists.
           files: |
-            release-assets/iNotes-v1.0.0-debug.apk
+            release-assets/iNotes-*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

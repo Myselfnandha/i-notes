@@ -3,8 +3,7 @@
     android:id="@+id/quick_note_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="20dp"
-    android:gravity="center">
+    android:padding="20dp">
 
     <!-- Floating Stationery Card -->
     <LinearLayout
@@ -57,12 +56,14 @@
                     android:textSize="11sp" />
             </LinearLayout>
 
-            <ImageView
+            <TextView
                 android:id="@+id/btn_close"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
-                android:src="@drawable/ic_widget_close"
-                android:padding="6dp"
+                android:text="✕"
+                android:textColor="@color/colorInkMuted"
+                android:textSize="16sp"
+                android:gravity="center"
                 android:clickable="true"
                 android:focusable="true" />
         </LinearLayout>

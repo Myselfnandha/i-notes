@@ -13,18 +13,18 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginBottom="8dp">
+        android:layout_marginBottom="6dp">
 
         <!-- Brand Monogram -->
         <TextView
-            android:layout_width="22dp"
-            android:layout_height="22dp"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
             android:background="@drawable/btn_save_ochre"
             android:text="i"
             android:textColor="#FFFFFF"
             android:textStyle="bold"
             android:gravity="center"
-            android:textSize="12sp"
+            android:textSize="11sp"
             android:layout_marginEnd="6dp" />
 
         <TextView
@@ -48,7 +48,7 @@
             android:id="@+id/widget_status_badge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="● VAULT READY"
+            android:text="● READY"
             android:textColor="@color/colorPrimary"
             android:textSize="9sp"
             android:textStyle="bold" />
@@ -62,9 +62,7 @@
         android:layout_weight="1"
         android:orientation="vertical"
         android:background="@drawable/bg_widget_typing_area"
-        android:padding="10dp"
-        android:clickable="true"
-        android:focusable="true">
+        android:padding="10dp">
 
         <TextView
             android:id="@+id/widget_prompt_text"
@@ -75,13 +73,13 @@
             android:textSize="13sp"
             android:textStyle="italic" />
 
-        <!-- Ruled notebook guide line -->
-        <View
+        <!-- Ruled notebook guide line using FrameLayout (RemoteViews-compliant) -->
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="#EFEBE4"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp" />
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="6dp" />
 
         <TextView
             android:id="@+id/widget_last_snippet"
@@ -99,7 +97,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginTop="8dp">
+        android:layout_marginTop="6dp">
 
         <TextView
             android:id="@+id/widget_btn_new_note"
@@ -113,32 +111,31 @@
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
             android:paddingTop="5dp"
-            android:paddingBottom="5dp"
-            android:clickable="true"
-            android:focusable="true" />
+            android:paddingBottom="5dp" />
 
-        <View
+        <!-- RemoteViews-compliant spacer -->
+        <FrameLayout
             android:layout_width="0dp"
             android:layout_height="1dp"
             android:layout_weight="1" />
 
-        <ImageView
+        <TextView
             android:id="@+id/widget_btn_voice"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:src="@drawable/ic_widget_mic"
-            android:padding="4dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:layout_marginEnd="6dp" />
+            android:layout_width="32dp"
+            android:layout_height="26dp"
+            android:gravity="center"
+            android:text="🎙"
+            android:textSize="14sp"
+            android:layout_marginEnd="4dp" />
 
-        <ImageView
+        <TextView
             android:id="@+id/widget_btn_checklist"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:src="@drawable/ic_widget_check"
-            android:padding="4dp"
-            android:clickable="true"
-            android:focusable="true" />
+            android:layout_width="32dp"
+            android:layout_height="26dp"
+            android:gravity="center"
+            android:text="✓"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/colorPrimary" />
     </LinearLayout>
 </LinearLayout>

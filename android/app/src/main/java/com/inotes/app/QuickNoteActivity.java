@@ -39,7 +39,7 @@ public class QuickNoteActivity extends Activity {
 
         inputTitle = findViewById(R.id.input_note_title);
         inputContent = findViewById(R.id.input_note_content);
-        ImageView btnClose = findViewById(R.id.btn_close);
+        View btnClose = findViewById(R.id.btn_close);
         TextView btnCancel = findViewById(R.id.btn_cancel);
         Button btnSave = findViewById(R.id.btn_save_note);
         View root = findViewById(R.id.quick_note_root);
