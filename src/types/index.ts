@@ -1,101 +1,76 @@
-export type ItemType = 'note' | 'reminder' | 'link' | 'instagram' | 'checklist' | 'audio';
+export type ColorWash = 'white' | 'cream' | 'sage' | 'peach' | 'chamois' | 'lavender';
 
-export type PriorityLevel = 'low' | 'medium' | 'high';
-
-export type RecurrenceRule = 'none' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
-
-export type ColorAccent =
-  | 'paper'
-  | 'oat'
-  | 'sage'
-  | 'ochre'
-  | 'terracotta'
-  | 'lilac'
-  | 'slate'
-  | 'emerald'
-  | 'cyan'
-  | 'amber'
-  | 'rose'
-  | 'violet';
-
-export type SortOption = 'newest' | 'oldest' | 'due' | 'priority' | 'alphabetical';
-
-export type SyncState = 'connected' | 'connecting' | 'reconnecting' | 'offline';
-
-export interface ChecklistTask {
-  text: string;
-  done: boolean;
+export interface Note {
+  id: string;
+  title: string;
+  content_json?: string;
+  content_html?: string;
+  snippet?: string;
+  folder_id?: string | null;
+  tags: string[];
+  pinned: boolean;
+  archived: boolean;
+  trashed: boolean;
+  color_wash: ColorWash;
+  audio_url?: string | null;
+  audio_duration?: number;
+  word_count?: number;
+  reading_time?: number;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface UrlMetadata {
-  title?: string;
-  description?: string;
-  image?: string;
-  siteName?: string;
-  favicon?: string;
-  isInstagram?: boolean;
-  igType?: 'reel' | 'post' | 'video' | 'story';
-  shortcode?: string;
-  embedUrl?: string;
-  cleanUrl?: string;
+export interface ChecklistItem {
+  id: string;
+  text: string;
+  completed: boolean;
+  priority?: 'High' | 'Medium' | 'Normal' | null;
+  badge?: string | null;
+  audio_clip?: string | null;
+  assignee?: string | null;
+  order: number;
+}
+
+export interface Checklist {
+  id: string;
+  title: string;
+  subtitle?: string;
+  category: string;
+  folder_id?: string | null;
+  pinned: boolean;
+  archived: boolean;
+  trashed: boolean;
+  color_wash: ColorWash;
+  reminder_time?: string | null;
+  reminder_location?: string | null;
+  items: ChecklistItem[];
+  media_attachments: string[];
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Folder {
   id: string;
   name: string;
+  parent_id?: string | null;
   color?: string;
-  icon?: string;
-  noteCount?: number;
+  display_order: number;
+  created_at: string;
 }
 
-export interface Item {
-  id: string;
-  sync_room: string;
-  type: ItemType;
-  title: string;
-  content: string;
-  plainText?: string;
-  deck?: string;
-  url?: string;
-  metadata?: UrlMetadata;
-  folderId?: string | null;
-  tags: string[];
-  color: ColorAccent;
-  is_pinned: boolean;
-  is_completed: boolean;
-  is_archived?: boolean;
-  due_date?: string | null;
-  reminder_recurrence?: RecurrenceRule;
-  priority?: PriorityLevel;
-  checklist?: ChecklistTask[];
-  snoozed_until?: string | null;
-  audio_duration?: string;
-  revision?: number;
-  created_at: number;
-  updated_at: number;
-  _offline_pending?: boolean;
-}
-
-export interface DeviceInfo {
+export interface Tag {
   id: string;
   name: string;
-  platform: string;
+  color?: string;
 }
 
-export interface NetworkInfo {
-  localIp: string;
-  port: number;
-  syncUrl: string;
-  publicHttpsUrl?: string | null;
-  lanSyncUrl?: string;
-  room: string;
-  qrDataUrl: string;
+export interface VaultStats {
+  notes_count: number;
+  checklists_count: number;
+  audio_count: number;
+  used_mb: number;
+  total_mb: number;
+  synced_at: string;
 }
 
-export interface ToastMessage {
-  id: string;
-  type: 'success' | 'info' | 'warning' | 'error';
-  title: string;
-  desc?: string;
-  duration?: number;
-}
+export type ActiveTab = 'notes' | 'checklists' | 'folders' | 'archive';

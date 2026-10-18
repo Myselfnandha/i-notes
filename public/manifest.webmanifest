@@ -1,29 +1,37 @@
 {
-  "name": "NovaSync - Notes, Reminders & Links",
-  "short_name": "NovaSync",
-  "description": "Unified Notes, Reminders, and Instant Link Collector with Realtime Cross-Device Sync",
-  "start_url": "/index.html",
-  "scope": "/",
+  "name": "i Notes — Warm Editorial Archival System",
+  "short_name": "i Notes",
+  "description": "Tactile editorial stationery notes, checklists, and voice dictations.",
+  "start_url": "/",
   "display": "standalone",
-  "orientation": "any",
-  "background_color": "#090d16",
-  "theme_color": "#090d16",
+  "background_color": "#FBFBFA",
+  "theme_color": "#FDF8F6",
+  "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/icons/icon.svg",
-      "sizes": "192x192 512x512 any",
-      "type": "image/svg+xml",
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ],
-  "share_target": {
-    "action": "/index.html",
-    "method": "GET",
-    "params": {
-      "title": "title",
-      "text": "text",
-      "url": "url"
+  "categories": ["productivity", "utilities", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "New Note",
+      "url": "/?action=new-note",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "New Checklist",
+      "url": "/?action=new-checklist",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
-  },
-  "categories": ["productivity", "utilities"]
+  ]
 }

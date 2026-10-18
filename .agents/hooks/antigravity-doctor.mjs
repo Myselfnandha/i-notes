@@ -173,7 +173,6 @@ function checkOrchestration(root, report, contract) {
   const cfg = contract?.phases?.orchestration ?? {};
   const groups = [
     ['workflow', cfg.workflows ?? [], name => path.join(root, '.agents', 'workflows', `${name}.md`)],
-    ['agent', cfg.agents ?? [], name => path.join(root, '.agents', 'agents', `${name}.md`)],
     ['skill', cfg.skills ?? [], name => path.join(root, '.agents', 'skills', name, 'SKILL.md')]
   ];
   for (const [kind, names, resolve] of groups) {

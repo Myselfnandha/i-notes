@@ -1,58 +1,60 @@
----
-title: NovaSync — Notes, Reminders & Instant Link Saver
-emoji: ⚡
-colorFrom: green
-colorTo: blue
-sdk: static
-pinned: false
----
+# i Notes — Warm Editorial Archival System (PWA)
 
-# ⚡ NovaSync — Enterprise-Grade Productivity & Cross-Device Sync
+A fullstack Progressive Web Application faithfully implementing the Warm Editorial design system from `stitch_modern_notes_app_ui` and `warm_editorial_notes/DESIGN.md`.
 
-> Unified, ultra-fast application for **Markdown Notes**, **Smart Reminders**, and **Instant Link / Instagram Reel Collection** with bidirectional real-time synchronization across phones, tablets, and computers worldwide.
+Live deployment on Hugging Face Spaces: [https://nandhaalagesan248-i-notes.static.hf.space](https://nandhaalagesan248-i-notes.static.hf.space)
 
 ---
 
-## 🌟 Key Features
+## Features
 
-### 1. 📝 Markdown Notes & Checklists
-- Full interactive checklists with live completion progress bar (`3 of 5 done (60%)`).
-- Real-time word counter and reading time estimates.
-- Color themes (Slate, Emerald, Cyan, Amber, Rose, Violet) for visual organization.
-- Pin notes to the top of your feed.
-
-### 2. ⏰ Smart Reminders & Harmonics
-- Priority levels: 🔴 High (Urgent), 🟡 Medium, 🟢 Low.
-- Recurrence rules: One-time, Daily, Weekdays, Weekly, Monthly.
-- Relative countdown badges: *Due in 15 mins*, *Overdue by 1h*, *Today at 4 PM*.
-- Web Audio API harmonic alert chime with synthesized multi-frequency chime.
-- One-click Snooze dropdown: *+15m*, *+1h*, *Tomorrow*.
-- Native browser Web Notifications.
-
-### 3. 📸 Instagram Reels & Link Scraper (Hoarder / Karakeep Benchmark)
-- Auto-detects Instagram Reels and Posts, automatically stripping tracking parameters (`?igsh=...`, `utm_source=...`).
-- Direct preview player and one-click "Open in Instagram App".
-- OpenGraph metadata scraper (Cheerio) fetching page title, description, favicon, and rich thumbnails.
-
-### 4. ⚡ 24/7 Worldwide Sync & Offline-First
-- **Static Frontend**: Hosted 24/7 on Hugging Face at `https://nandhaalagesan248-novasync.static.hf.space`.
-- **Cloudflare HTTPS Tunnel**: Zero open router ports, instant worldwide pairing via mobile camera QR code.
-- **Offline Mutation Queue**: If offline, actions are saved locally and automatically synced to the server upon reconnection!
-- **Multi-Device Presence**: Live roster of connected phones, tablets, and desktop computers in the room.
+- **Tactile Editorial Aesthetics**: Built according to `warm_editorial_notes/DESIGN.md` using `Newsreader` (optical serif) and `Plus Jakarta Sans`, tactile paper card surfaces, resting paper shadows, and 6 subtle category wash tints (white, cream, sage, peach, chamois, lavender).
+- **All 4 Design Screens**:
+  1. **Notes Feed (`folio_all_notes`)**: Pill search bar, category chips, pinned notes/checklists, responsive 2-3 column masonry feed, and thumb-docked floating action bar.
+  2. **Folders & Vault (`folders_organization`)**: Multi-segment storage meter, 2x2 smart filter tiles (Pinned, Reminders, Audio, Locked), expandable nested folders tree, tags cloud, and archive/trash maintenance drawers.
+  3. **Note Editor (`note_editor`)**: Full-bleed distraction-free drafting canvas powered by Tiptap/ProseMirror with optical Newsreader headings, blockquotes with warm ochre margins, inline checklists, callout cards, photo attachments, and a 6-color paper wash dock.
+  4. **Checklists & Tasks (`checklists_tasks`)**: Scheduled reminder card, dynamic progress calculation bar, HTML5/touch drag-and-drop task reordering, priority badges (`⚑ High`), dry-run tags, and inline audio rehearsal clips (`0:42`).
+- **Real Voice Dictation & Audio**: Live microphone recording via browser `MediaRecorder` API with a real-time Web Audio API frequency visualizer and scrubbable playback.
+- **Offline-First Resilience**: IndexedDB (`idb`) client storage ensures all notes and checklists work with zero network latency and complete offline persistence.
+- **Vault Archival Manager**: One-click JSON export and import for local backups, plus background synchronization with the Hugging Face backend.
+- **PWA Ready**: Offline caching service worker (`sw.js`), web manifest, standalone display mode, and custom install prompt.
 
 ---
 
-## 📱 Mobile PWA & Web Share Target
+## Getting Started Locally
 
-1. Open **NovaSync** on your phone in Chrome or Safari.
-2. Tap **"Install App"** / **"Add to Home Screen"**.
-3. Now in Instagram or your web browser, tap **Share → NovaSync**: your reel or link is captured and synced across all your devices in milliseconds!
+### 1. Frontend Development
+
+```bash
+npm install
+npm run dev
+# Vite dev server runs at http://localhost:5173
+```
+
+### 2. Backend Server (FastAPI + SQLite)
+
+```bash
+python run.py
+# FastAPI backend runs at http://localhost:7860
+```
+
+### 3. Production Build
+
+```bash
+npm run build
+# Compiles TypeScript and creates optimized static assets in dist/
+```
 
 ---
 
-## 🛠️ Tech Stack
+## Deployment to Hugging Face Spaces
 
-- **Frontend**: React 19, TypeScript, Vite 8, Lucide React, Web Audio API, Service Worker PWA.
-- **Backend**: Node.js, Express, `node:sqlite` (WAL Mode), WebSocket (`ws`), Cheerio OpenGraph scraper, QRCode generator.
-- **Network**: Cloudflare Public HTTPS Tunnel (`cloudflared`).
-- **Cloud**: Hugging Face Spaces (Static 24/7 free tier).
+The app is deployed to:
+- Space URL: `https://huggingface.co/spaces/nandhaalagesan248/i-notes`
+- Live App: `https://nandhaalagesan248-i-notes.static.hf.space`
+
+To deploy updates:
+```bash
+npm run build
+hf upload nandhaalagesan248/i-notes ./dist . --repo-type space --commit-message "Update i Notes PWA"
+```

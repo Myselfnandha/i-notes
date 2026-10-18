@@ -1,0 +1,8 @@
+{
+  "appId": "com.inotes.app",
+  "appName": "i Notes",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}

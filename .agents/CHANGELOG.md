@@ -1,5 +1,21 @@
 # ZeroGravity OS Changelog
 
+## 1.1.5 (2026-10-17)
+
+### Highlights & Reasoning Effort Optimization
+- **Default High Reasoning**: Set baseline model reasoning effort to `high` (Claude-style deep reasoning) in `rules/core.md` (§10) and `rules/effort.md`.
+- **Restored Granular Effort Workflows**: Retained dedicated `/effort-low`, `/effort-mid`, `/effort-high` (default), and `/effort-ultra` workflows.
+- **Removed Redundant Effort Entrypoint**: Pruned `.agents/workflows/effort.md` in favor of direct granular slash commands.
+
+## 1.1.4 (2026-10-17)
+
+### Highlights & Slim Optimization
+- **File Count Reduced**: Down to 115 total package files (from 229+) and 516 KB installer.
+- **Workflow & Rules Consolidation**: Merged all effort levels into unified `workflows/effort.md` and `rules/core.md` (§10).
+- **Purged Obsolete Workflows & Manifests**: Deleted legacy `prd-workflow.md`, `teach-concept.md`, `spec-driven-dev.md`, and stale `manifest.json`.
+- **Ecosystem & Redundancy Pruning**: Removed dead `DEPENDENCY_GRAPH.md`, unused ecosystem templates, and session scratch files.
+- **MCP Catalog Isolated in Skill Data**: Moved 1.27 MB community catalog dataset into `skills/mcp/data/` leaving core `mcp-registry/servers.json` lean (5 KB, 12 verified servers).
+
 ## 1.1.3 (2026-10-15)
 
 ### Highlights & Major Optimization

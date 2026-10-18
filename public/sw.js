@@ -1,25 +1,21 @@
-const CACHE_NAME = 'novasync-v4';
+const CACHE_NAME = 'inotes-cache-v1';
 const STATIC_ASSETS = [
+  '/',
   '/index.html',
   '/manifest.webmanifest',
-  '/icons/icon.svg'
+  '/favicon.png',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/app-icon.jpg'
 ];
 
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return Promise.all(
-        STATIC_ASSETS.map((asset) => {
-          return fetch(asset, { cache: 'reload' })
-            .then((res) => {
-              if (res.ok) return cache.put(asset, res);
-            })
-            .catch((err) => console.warn('Cache asset skip:', asset, err));
-        })
-      );
+      return cache.addAll(STATIC_ASSETS);
     })
   );
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
@@ -28,44 +24,49 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
       );
-    }).then(() => self.clients.claim())
+    })
   );
+  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Exclude WebSockets, config.json, and external APIs
-  if (
-    url.pathname === '/config.json' ||
-    url.protocol.startsWith('ws') ||
-    url.hostname.includes('itty.ws') ||
-    url.hostname.includes('microlink.io') ||
-    event.request.method !== 'GET'
-  ) {
-    return;
-  }
-
-  // Navigation requests: serve /index.html (SPA Fallback)
-  if (event.request.mode === 'navigate') {
+  // Skip API calls from cache-first so dynamic data goes network/sync
+  if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request).catch(() => {
-        return caches.match('/index.html');
+        return new Response(JSON.stringify({ offline: true, error: 'Network unavailable' }), {
+          headers: { 'Content-Type': 'application/json' }
+        });
       })
     );
     return;
   }
 
-  // Cache-first with network fallback for static assets
+  // Cache-first strategy for app shell and assets with network fallback
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request).then((res) => {
-        if (res.status === 200) {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then((c) => c.put(event.request, clone));
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        // Fetch in background to update cache
+        fetch(event.request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse));
+          }
+        }).catch(() => {});
+        return cachedResponse;
+      }
+      return fetch(event.request).then((networkResponse) => {
+        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+          return networkResponse;
         }
-        return res;
+        const responseToCache = networkResponse.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
+        return networkResponse;
+      }).catch(() => {
+        if (event.request.mode === 'navigate') {
+          return caches.match('/index.html');
+        }
       });
     })
   );

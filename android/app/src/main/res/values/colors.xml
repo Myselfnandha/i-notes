@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#8D4B00</color>
+    <color name="colorPrimaryDark">#5B3000</color>
+    <color name="colorAccent">#E0A96D</color>
+    <color name="colorParchment">#FAF5ED</color>
+    <color name="colorParchmentCard">#FFFFFF</color>
+    <color name="colorParchmentBorder">#EAD7C1</color>
+    <color name="colorInk">#1C1B1A</color>
+    <color name="colorInkMuted">#6F6B66</color>
+    <color name="colorInkLight">#9E9A95</color>
+    <color name="colorWashSage">#F3F6F2</color>
+    <color name="colorWashPeach">#FDF3EE</color>
+    <color name="colorWashChamois">#FAF5ED</color>
+    <color name="translucent_overlay">#73000000</color>
+</resources>

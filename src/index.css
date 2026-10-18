@@ -1,0 +1,130 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-canvas: #FBFBFA;
+  --color-surface: #fdf8f6;
+  --color-recessed: #F4F3EF;
+  --color-card: #FFFFFF;
+  --color-hairline: #EBE8E1;
+  --color-primary: #8d4b00;
+  --color-ink-primary: #1C1B1A;
+  --color-ink-secondary: #57534E;
+  --color-ink-tertiary: #A8A29E;
+  --color-ochre: #D97706;
+}
+
+body {
+  background-color: #FBFBFA;
+  color: #1C1B1A;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  padding: 0;
+  overscroll-behavior-y: none;
+}
+
+/* Custom editorial paper scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #EBE8E1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #D97706;
+}
+
+/* Tiptap Editor ProseMirror Custom Styling */
+.ProseMirror {
+  outline: none;
+  min-height: 280px;
+}
+.ProseMirror p {
+  margin-bottom: 1rem;
+  line-height: 1.65;
+  color: #1C1B1A;
+}
+.ProseMirror h1, .ProseMirror h2, .ProseMirror h3 {
+  font-family: 'Newsreader', Georgia, serif;
+  color: #1C1B1A;
+  font-weight: 500;
+}
+.ProseMirror blockquote {
+  border-left: 3px solid #D97706;
+  padding-left: 1rem;
+  margin-left: 0;
+  margin-right: 0;
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
+  font-family: 'Newsreader', Georgia, serif;
+  font-style: italic;
+  color: #57534E;
+  background: #FAF8F5;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-radius: 0 12px 12px 0;
+}
+.ProseMirror ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+}
+.ProseMirror ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.ProseMirror ul[data-type="taskList"] li > label {
+  user-select: none;
+  margin-top: 0.2rem;
+}
+.ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"] {
+  accent-color: #D97706;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div {
+  text-decoration: line-through;
+  color: #A8A29E;
+}
+.ProseMirror mark {
+  background-color: rgba(217, 119, 6, 0.15);
+  color: #8d4b00;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+.ProseMirror img {
+  max-width: 100%;
+  border-radius: 14px;
+  box-shadow: 0px 4px 12px rgba(28, 27, 26, 0.06);
+}
+
+/* Masonry Columns */
+.masonry-grid {
+  column-count: 1;
+  column-gap: 0.875rem;
+}
+@media (min-width: 640px) {
+  .masonry-grid {
+    column-count: 2;
+  }
+}
+@media (min-width: 1024px) {
+  .masonry-grid {
+    column-count: 3;
+  }
+}
+.masonry-item {
+  break-inside: avoid;
+  margin-bottom: 0.875rem;
+}

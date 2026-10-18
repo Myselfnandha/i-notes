@@ -29,3 +29,10 @@ Zero unnecessary round-trips; minimize context growth per turn.
 §8 SAFETY GATES: Mandatory user confirmation before file deletion, force-push, dropping tables, or destructive shell operations. Flag cross-component risks upfront. Never expose secrets or tokens in output logs.
 
 §9 REACTIVE ASYNC & LIVE STATUS: Always use the reactive "waiting for task notification" pattern with live status. Avoid unnecessary timers, delays, or sleeps. No status polling loops; await direct process completion notifications.
+
+§10 REASONING EFFORT (DEFAULT: HIGH): Operate by default at `high` reasoning effort (Claude-style deep reasoning):
+- **Default Baseline**: `high`. Full context sweep, trace call chains and dependency blast radius before editing.
+- **Reasoning**: Thorough reasoning chain evaluating architecture trade-offs, edge cases, and failure modes.
+- **Planning**: Explicitly declare edit scope and blast radius upfront. Plan for any non-trivial architectural change.
+- **Verification**: Mandatory empirical verification via unit tests, build commands, and terminal output. No "should work" claims.
+- **Overrides**: Switch dynamically with `/effort-low` (fire & forget), `/effort-mid` (standard balanced), or `/effort-ultra` (exhaustive mission-critical analysis, leave nothing unchecked). Default resets to `high`.

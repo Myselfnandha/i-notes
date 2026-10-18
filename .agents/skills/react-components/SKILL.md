@@ -55,12 +55,5 @@ Invocation differs slightly per agent (`/mcp__reui__build` in Claude Code/Cursor
 
 ## Detailed references
 
-- [rules/registry.md](./rules/registry.md) - the four types, the @reui registry, base/radix, free vs premium + license
-- [rules/workflow.md](./rules/workflow.md) - the find -> install -> read-API -> adapt loop (most important)
-- [rules/components.md](./rules/components.md) - the 22 components, the data-grid contract, base vs radix
-- [rules/adapting.md](./rules/adapting.md) - reuse-first: preserve the design (no over-customizing), reuse examples + a block's own elements, real data, don't invent APIs
-- [rules/craft.md](./rules/craft.md) - make it exceptional: point of view, hierarchy, density, states, responsive, motion, the bar
-- [rules/quality.md](./rules/quality.md) - security, accessibility, and scroll gates (the done gate)
-- [rules/styling.md](./rules/styling.md) - ReUI extended tokens, theme adaptation, density
-- [rules/icons.md](./rules/icons.md) - portable icons, swapping imports, Motion Icons (static + animated)
-- [tools.md](./tools.md) - the ReUI MCP: golden path, the 19 tools, token rules, result shapes, errors
+- [reference.md](./reference.md) - Full consolidated guide: registry types, find/install/adapt workflow, component contracts, craft standards, styling tokens, and quality gates.
+- [tools.md](./tools.md) - The ReUI MCP: golden path, tools reference, token rules, and result shapes.

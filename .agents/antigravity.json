@@ -1,5 +1,4 @@
 {
-  "$schema": "hooks/antigravity-contract.schema.json",
   "schemaVersion": "1.0.0",
   "runtime": "antigravity",
   "requiredCliCommands": [
@@ -24,7 +23,6 @@
     },
     "orchestration": {
       "workflows": ["orchestrate", "build-feature"],
-      "agents": ["orchestrator", "project-planner", "security-auditor", "test-engineer"],
       "skills": ["audit-agent", "compress-tokens", "humanize-text", "react-components", "skill-router"]
     },
     "plugin": {

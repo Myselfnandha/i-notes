@@ -99,6 +99,15 @@
     "date_added": "2026-03-01"
   },
   {
+    "id": "mcp",
+    "path": "skills/mcp",
+    "name": "mcp",
+    "description": "Search, evaluate, and enable on-demand MCP servers from the 12 verified registry and 2,600+ extended ecosystem catalog.",
+    "category": "general",
+    "risk": "safe",
+    "date_added": "2026-03-01"
+  },
+  {
     "id": "ponytail",
     "path": "plugins/ponytail/skills/ponytail",
     "name": "ponytail",
