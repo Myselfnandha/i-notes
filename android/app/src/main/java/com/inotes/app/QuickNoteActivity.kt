@@ -12,6 +12,7 @@ import android.widget.TextView
 import android.widget.Toast
 import com.inotes.app.data.model.Note
 import com.inotes.app.data.repository.NotesRepository
+import kotlinx.coroutines.launch
 
 class QuickNoteActivity : Activity() {
 
@@ -75,6 +76,14 @@ class QuickNoteActivity : Activity() {
 
             // Direct save to Native SQLite Vault
             NotesRepository.getInstance(applicationContext).saveNote(newNote)
+
+            // Trigger background sync with Hugging Face if configured
+            val syncManager = com.inotes.app.data.sync.HuggingFaceSyncManager.getInstance(applicationContext)
+            if (syncManager.getHfToken().isNotBlank()) {
+                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                    syncManager.performSync()
+                }
+            }
 
             Toast.makeText(this, "Saved to i Notes Vault", Toast.LENGTH_SHORT).show()
 

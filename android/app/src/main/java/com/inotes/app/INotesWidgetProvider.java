@@ -55,29 +55,16 @@ public class INotesWidgetProvider extends AppWidgetProvider {
         views.setOnClickPendingIntent(R.id.widget_blank_space, quickNotePendingIntent);
         views.setOnClickPendingIntent(R.id.widget_btn_new_note, quickNotePendingIntent);
 
-        // PendingIntent for Voice Note in main app
-        Intent voiceIntent = new Intent(context, MainActivity.class);
-        voiceIntent.setAction("inotes.action.VOICE");
-        voiceIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent voicePendingIntent = PendingIntent.getActivity(
+        // PendingIntent for Opening Main Notes App
+        Intent openAppIntent = new Intent(context, MainActivity.class);
+        openAppIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent openAppPendingIntent = PendingIntent.getActivity(
                 context,
                 1,
-                voiceIntent,
+                openAppIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
-        views.setOnClickPendingIntent(R.id.widget_btn_voice, voicePendingIntent);
-
-        // PendingIntent for Checklist in main app
-        Intent checklistIntent = new Intent(context, MainActivity.class);
-        checklistIntent.setAction("inotes.action.CHECKLIST");
-        checklistIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent checklistPendingIntent = PendingIntent.getActivity(
-                context,
-                2,
-                checklistIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
-        views.setOnClickPendingIntent(R.id.widget_btn_checklist, checklistPendingIntent);
+        views.setOnClickPendingIntent(R.id.widget_btn_open_app, openAppPendingIntent);
 
         appWidgetManager.updateAppWidget(appWidgetId, views);
     }

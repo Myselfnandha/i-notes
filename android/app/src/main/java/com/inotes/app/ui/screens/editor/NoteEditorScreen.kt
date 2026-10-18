@@ -10,7 +10,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,19 +24,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.inotes.app.data.model.Note
 import com.inotes.app.ui.theme.*
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteEditorScreen(
     initialNote: Note?,
-    onSaveAndExit: (Note) -> Unit,
+    onSaveNote: (Note) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val noteId = remember { initialNote?.id ?: "note-${System.currentTimeMillis()}" }
+    val createdAt = remember { initialNote?.createdAt ?: System.currentTimeMillis() }
+
     var title by remember { mutableStateOf(initialNote?.title ?: "") }
     var content by remember { mutableStateOf(initialNote?.content ?: "") }
     var colorWash by remember { mutableStateOf(initialNote?.colorWash ?: "chamois") }
     var isPinned by remember { mutableStateOf(initialNote?.pinned ?: false) }
+    var isSaving by remember { mutableStateOf(false) }
 
     val washColor = getPaperWashColor(colorWash)
     val wordCount = remember(content) {
@@ -56,25 +60,30 @@ fun NoteEditorScreen(
         "lavender" to WashLavender
     )
 
-    fun performSave() {
-        val now = System.currentTimeMillis()
-        val noteToSave = Note(
-            id = initialNote?.id ?: "note-$now",
-            title = title,
-            content = content,
-            snippet = if (content.length > 80) content.take(80) + "..." else content,
-            folderId = initialNote?.folderId,
-            tags = initialNote?.tags ?: listOf("reflection"),
-            pinned = isPinned,
-            archived = initialNote?.archived ?: false,
-            trashed = false,
-            colorWash = colorWash,
-            wordCount = wordCount,
-            readingTime = readingTime,
-            createdAt = initialNote?.createdAt ?: now,
-            updatedAt = now
-        )
-        onSaveAndExit(noteToSave)
+    // Silent Auto-Save on Keystroke (Debounced by 400ms)
+    LaunchedEffect(title, content, colorWash, isPinned) {
+        if (title.isNotBlank() || content.isNotBlank()) {
+            isSaving = true
+            delay(400)
+            val noteToSave = Note(
+                id = noteId,
+                title = title,
+                content = content,
+                snippet = if (content.length > 80) content.take(80) + "..." else content,
+                folderId = initialNote?.folderId,
+                tags = initialNote?.tags ?: listOf("reflection"),
+                pinned = isPinned,
+                archived = initialNote?.archived ?: false,
+                trashed = false,
+                colorWash = colorWash,
+                wordCount = wordCount,
+                readingTime = readingTime,
+                createdAt = createdAt,
+                updatedAt = System.currentTimeMillis()
+            )
+            onSaveNote(noteToSave)
+            isSaving = false
+        }
     }
 
     Scaffold(
@@ -82,16 +91,14 @@ fun NoteEditorScreen(
             TopAppBar(
                 title = {},
                 navigationIcon = {
-                    IconButton(onClick = {
-                        if (title.isNotBlank() || content.isNotBlank()) performSave() else onBack()
-                    }) {
+                    IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = InkPrimary)
                     }
                 },
                 actions = {
-                    // Paper Wash Picker Dock
+                    // Paper Wash Picker Swatches
                     Row(
-                        modifier = Modifier.padding(end = 8.dp),
+                        modifier = Modifier.padding(end = 10.dp),
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -119,36 +126,20 @@ fun NoteEditorScreen(
                             tint = if (isPinned) OchrePrimary else InkTertiary
                         )
                     }
-
-                    // Save Button
-                    FilledTonalButton(
-                        onClick = { performSave() },
-                        colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = OchrePrimary,
-                            contentColor = Color.White
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                        modifier = Modifier.padding(end = 12.dp)
-                    ) {
-                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Save", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = washColor)
             )
         },
         bottomBar = {
-            // Editorial Reading Status Bar
+            // Subtle Stationery Status Bar
             Surface(
                 color = washColor,
-                border = borderModifier(ParchmentBorder)
+                border = androidx.compose.foundation.BorderStroke(1.dp, ParchmentBorder)
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 10.dp),
+                        .padding(horizontal = 20.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -158,9 +149,9 @@ fun NoteEditorScreen(
                         color = InkSecondary
                     )
                     Text(
-                        text = "ARCHIVAL INK READY",
+                        text = if (isSaving) "Saving..." else "● Auto-saved",
                         style = MaterialTheme.typography.labelSmall,
-                        color = OchrePrimary,
+                        color = if (isSaving) OchreLight else OchrePrimary,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -175,7 +166,7 @@ fun NoteEditorScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 12.dp)
         ) {
-            // Note Title
+            // Note Title (Serif typography)
             TextField(
                 value = title,
                 onValueChange = { title = it },
@@ -214,7 +205,7 @@ fun NoteEditorScreen(
                 modifier = Modifier.padding(vertical = 8.dp)
             )
 
-            // Note Content Body
+            // Note Content Body (Auto-expanding ruled sheet)
             TextField(
                 value = content,
                 onValueChange = { content = it },
@@ -245,12 +236,8 @@ fun NoteEditorScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillMaxHeight()
-                    .defaultMinSize(minHeight = 400.dp)
+                    .defaultMinSize(minHeight = 450.dp)
             )
         }
     }
-}
-
-private fun borderModifier(color: Color): androidx.compose.foundation.BorderStroke {
-    return androidx.compose.foundation.BorderStroke(1.dp, color)
 }

@@ -51,7 +51,7 @@ jobs:
           mkdir -p release-assets
           VERSION_TAG="${{ github.event.inputs.release_tag || github.ref_name }}"
           if [ -z "$VERSION_TAG" ] || [ "$VERSION_TAG" = "main" ]; then
-            VERSION_TAG="v2.0.0"
+            VERSION_TAG="v2.1.0"
           fi
           cp android/app/build/outputs/apk/debug/app-debug.apk release-assets/iNotes-${VERSION_TAG}-debug.apk
           cp android/app/build/outputs/apk/debug/app-debug.apk release-assets/iNotes-latest.apk
@@ -72,7 +72,14 @@ jobs:
           draft: false
           prerelease: false
           body: |
-            ### 📜 i Notes v2.0.0 — 100% Pure Native Android Archival System
+            ### 📜 i Notes v2.1.0 — Minimalist Native Android Notepad with Cloud Sync
+            
+            This release delivers the pure Ponytail YAGNI Minimalist Native Notepad:
+            - **Silent Auto-Save Stationery Editor**: Auto-saves on every keystroke, ruled unbleached paper sheet, word counter, and paper-wash swatches.
+            - **Chronological Card Feed**: Pinned reflections at the top, card snippets, and instant real-time search.
+            - **Ruled Quick-Entry Card Widget (4x2)**: 0ms floating quick-capture dialog directly over your home screen.
+            - **Hugging Face Cloud Sync**: Bidirectional sync and backup with your private Hugging Face vault repository (`nandhaalagesan248/inotes-vault`).
+            - **Local SQLite WAL**: 100% offline-first reliability.
             
             This major release transitions i Notes from a hybrid web container to a **100% Pure Native Android Application** built with Kotlin, Jetpack Compose, Material 3, and Native SQLite WAL:
             - **100% Pure Native UI (Jetpack Compose & Material 3)**:

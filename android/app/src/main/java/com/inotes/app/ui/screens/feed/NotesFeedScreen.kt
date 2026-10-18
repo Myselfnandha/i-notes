@@ -5,7 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,22 +34,20 @@ fun NotesFeedScreen(
     onNewNoteClick: () -> Unit,
     onTogglePin: (Note) -> Unit,
     onDeleteNote: (Note) -> Unit,
+    onOpenSync: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    var selectedTag by remember { mutableStateOf<String?>(null) }
 
-    val allTags = remember(notes) {
-        notes.flatMap { it.tags }.distinct()
-    }
-
-    val filteredNotes = remember(notes, searchQuery, selectedTag) {
+    val filteredNotes = remember(notes, searchQuery) {
         notes.filter { note ->
             !note.archived && !note.trashed &&
-            (searchQuery.isBlank() || note.title.contains(searchQuery, ignoreCase = true) || note.content.contains(searchQuery, ignoreCase = true)) &&
-            (selectedTag == null || note.tags.contains(selectedTag))
+            (searchQuery.isBlank() || note.title.contains(searchQuery, ignoreCase = true) || note.content.contains(searchQuery, ignoreCase = true))
         }
     }
+
+    val pinnedNotes = remember(filteredNotes) { filteredNotes.filter { it.pinned } }
+    val otherNotes = remember(filteredNotes) { filteredNotes.filter { !it.pinned } }
 
     Column(
         modifier = modifier
@@ -85,10 +82,24 @@ fun NotesFeedScreen(
                     style = MaterialTheme.typography.titleLarge
                 )
                 Text(
-                    text = "ARCHIVAL SYSTEM · PURE NATIVE",
+                    text = "MINIMALIST NATIVE VAULT",
                     style = MaterialTheme.typography.labelSmall
                 )
             }
+
+            // Cloud Sync Icon Button
+            IconButton(onClick = onOpenSync) {
+                Icon(
+                    Icons.Default.CloudSync,
+                    contentDescription = "Cloud Sync",
+                    tint = OchrePrimary,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(4.dp))
+
+            // Add Note Button
             FilledTonalButton(
                 onClick = onNewNoteClick,
                 colors = ButtonDefaults.filledTonalButtonColors(
@@ -104,11 +115,11 @@ fun NotesFeedScreen(
             }
         }
 
-        // Search Bar
+        // Instant Search Bar
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
-            placeholder = { Text("Search vault reflections...", fontSize = 13.sp, color = InkTertiary) },
+            placeholder = { Text("Search reflections...", fontSize = 13.sp, color = InkTertiary) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = InkSecondary, modifier = Modifier.size(18.dp)) },
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {
@@ -130,32 +141,7 @@ fun NotesFeedScreen(
                 .padding(horizontal = 18.dp, vertical = 4.dp)
         )
 
-        // Tag Filter Chips
-        if (allTags.isNotEmpty()) {
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 18.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                item {
-                    FilterChip(
-                        selected = selectedTag == null,
-                        onClick = { selectedTag = null },
-                        label = { Text("All Notes", fontSize = 11.sp) }
-                    )
-                }
-                items(allTags) { tag ->
-                    FilterChip(
-                        selected = selectedTag == tag,
-                        onClick = { selectedTag = if (selectedTag == tag) null else tag },
-                        label = { Text("#$tag", fontSize = 11.sp) }
-                    )
-                }
-            }
-        }
-
-        // Notes List
+        // Notes Feed List
         if (filteredNotes.isEmpty()) {
             Box(
                 modifier = Modifier
@@ -191,13 +177,53 @@ fun NotesFeedScreen(
                 contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 8.dp, bottom = 90.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(filteredNotes, key = { it.id }) { note ->
-                    NoteCard(
-                        note = note,
-                        onClick = { onNoteClick(note) },
-                        onTogglePin = { onTogglePin(note) },
-                        onDelete = { onDeleteNote(note) }
-                    )
+                // Pinned section
+                if (pinnedNotes.isNotEmpty()) {
+                    item {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
+                        ) {
+                            Icon(Icons.Default.PushPin, contentDescription = null, tint = OchrePrimary, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "PINNED REFLECTIONS",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = OchrePrimary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                    items(pinnedNotes, key = { it.id }) { note ->
+                        NoteCard(
+                            note = note,
+                            onClick = { onNoteClick(note) },
+                            onTogglePin = { onTogglePin(note) },
+                            onDelete = { onDeleteNote(note) }
+                        )
+                    }
+                }
+
+                // Recent notes section
+                if (otherNotes.isNotEmpty()) {
+                    if (pinnedNotes.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = "RECENT REFLECTIONS",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = InkTertiary,
+                                modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
+                            )
+                        }
+                    }
+                    items(otherNotes, key = { it.id }) { note ->
+                        NoteCard(
+                            note = note,
+                            onClick = { onNoteClick(note) },
+                            onTogglePin = { onTogglePin(note) },
+                            onDelete = { onDeleteNote(note) }
+                        )
+                    }
                 }
             }
         }
@@ -212,7 +238,7 @@ fun NoteCard(
     onDelete: () -> Unit
 ) {
     val washColor = getPaperWashColor(note.colorWash)
-    val dateFormat = remember { SimpleDateFormat("MMM d, yyyy", Locale.getDefault()) }
+    val dateFormat = remember { SimpleDateFormat("MMM d, yyyy · h:mm a", Locale.getDefault()) }
 
     Card(
         modifier = Modifier
@@ -229,7 +255,7 @@ fun NoteCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = note.title.ifBlank { "Untitled Note" },
+                    text = note.title.ifBlank { "Untitled Reflection" },
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontFamily = FontFamily.Serif,
                         fontWeight = FontWeight.Bold,
@@ -240,25 +266,29 @@ fun NoteCard(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
-                if (note.pinned) {
+
+                IconButton(
+                    onClick = onTogglePin,
+                    modifier = Modifier.size(24.dp)
+                ) {
                     Icon(
                         Icons.Default.PushPin,
-                        contentDescription = "Pinned",
-                        tint = OchrePrimary,
-                        modifier = Modifier
-                            .size(16.dp)
-                            .clickable(onClick = onTogglePin)
+                        contentDescription = if (note.pinned) "Unpin" else "Pin",
+                        tint = if (note.pinned) OchrePrimary else InkTertiary.copy(alpha = 0.5f),
+                        modifier = Modifier.size(16.dp)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
                 }
+
+                Spacer(modifier = Modifier.width(4.dp))
+
                 IconButton(
                     onClick = onDelete,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(24.dp)
                 ) {
                     Icon(
                         Icons.Default.DeleteOutline,
                         contentDescription = "Delete",
-                        tint = InkTertiary,
+                        tint = InkTertiary.copy(alpha = 0.7f),
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -277,7 +307,7 @@ fun NoteCard(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Footer meta: tags, reading time & date
+            // Footer meta: date & word count
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -288,19 +318,10 @@ fun NoteCard(
                     color = InkTertiary
                 )
                 Text(
-                    text = " · ${note.readingTime} min read",
+                    text = " · ${note.wordCount} words",
                     style = MaterialTheme.typography.labelSmall,
                     color = InkTertiary
                 )
-                Spacer(modifier = Modifier.weight(1f))
-                for (tag in note.tags.take(2)) {
-                    Text(
-                        text = "#$tag",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = OchrePrimary,
-                        modifier = Modifier.padding(start = 4.dp)
-                    )
-                }
             }
         }
     }
