@@ -10,33 +10,21 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Release Tag (e.g. v1.0.0)'
+        description: 'Release Tag (e.g. v2.0.0)'
         required: false
-        default: 'v1.0.0'
+        default: 'v2.0.0'
 
 permissions:
   contents: write
 
 jobs:
   build:
-    name: Build Android APK & Widget
+    name: Build Pure Native Android APK & Widget
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
-      - name: Set up Node.js 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-
-      - name: Install Node Dependencies
-        run: npm install
-
-      - name: Build Web Application
-        run: npm run build
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -49,9 +37,6 @@ jobs:
         run: |
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-36" || true
-
-      - name: Sync Capacitor Android
-        run: npx cap sync android
 
       - name: Grant Execute Permission to Gradlew
         run: chmod +x ./android/gradlew
@@ -66,7 +51,7 @@ jobs:
           mkdir -p release-assets
           VERSION_TAG="${{ github.event.inputs.release_tag || github.ref_name }}"
           if [ -z "$VERSION_TAG" ] || [ "$VERSION_TAG" = "main" ]; then
-            VERSION_TAG="v1.0.1"
+            VERSION_TAG="v2.0.0"
           fi
           cp android/app/build/outputs/apk/debug/app-debug.apk release-assets/iNotes-${VERSION_TAG}-debug.apk
           cp android/app/build/outputs/apk/debug/app-debug.apk release-assets/iNotes-latest.apk
@@ -83,23 +68,23 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.release_tag || github.ref_name }}
-          name: i Notes Android Release ${{ github.event.inputs.release_tag || github.ref_name }}
+          name: i Notes Pure Native Android Release ${{ github.event.inputs.release_tag || github.ref_name }}
           draft: false
           prerelease: false
           body: |
-            ### 📜 i Notes — Warm Editorial Archival System (Android APK)
+            ### 📜 i Notes v2.0.0 — 100% Pure Native Android Archival System
             
-            This release packages the native Android application featuring:
+            This major release transitions i Notes from a hybrid web container to a **100% Pure Native Android Application** built with Kotlin, Jetpack Compose, Material 3, and Native SQLite WAL:
+            - **100% Pure Native UI (Jetpack Compose & Material 3)**:
+              - Zero WebView overhead. Instantaneous cold start and smooth 120Hz native touch animations.
+              - **Notes Feed**: Staggered cards, 6 stationery paper washes (Chamois, Cream, Sage, Peach, White, Lavender), live search, and tag filtering.
+              - **Stationery Canvas Editor**: Pure native notebook writing canvas with Serif headline typography, ruled guideline, paper wash selector dock, and word count & reading time tracker.
+              - **Interactive Checklists**: Structured task management with progress bars and animated checkbox state.
+              - **Folders & Vault Taxonomy**: Folder categorization and full JSON vault export/backup.
             - **Fixed Warm Editorial Home Screen Widget (4x2 / 4x3)**:
-              - Fixed RemoteViews inflation issue (`InflateException` from bare `<View>` tags replaced with RemoteViews-compliant `<FrameLayout>`).
-              - Unbleached parchment aesthetic with deckled hairline borders.
-              - **Seamless blank typing area**: tap the widget space directly on your home screen to instantly bring up the keyboard and a native translucent stationery card dialog.
-              - Saves immediately to the local vault and dismisses back to your home screen without entering the full app.
-            - **Background Cloud & Local Sync**:
-              - Automatically merges widget notes into the local IndexedDB vault.
-              - Background synchronization with backend server.
-            - **Full Editorial Canvas**:
-              - Newsreader serif typography, 6 paper wash swatches dock, audio memos, and structured checklists.
+              - RemoteViews-compliant stationery card.
+              - Instant quick-note capture via floating translucent dialog (`QuickNoteActivity`) without leaving your home screen.
+              - Direct native SQLite persistence.
           files: |
             release-assets/iNotes-*.apk
         env:

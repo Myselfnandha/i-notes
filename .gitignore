@@ -25,7 +25,8 @@ dist-ssr
 
 # Backend local data & venv
 backend/venv/
-data/
+backend/data/
+/data/
 *.db
 *.sqlite3
 __pycache__/
