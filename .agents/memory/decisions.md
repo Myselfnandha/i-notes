@@ -29,5 +29,6 @@ This document records durable architectural decisions, system invariants, and in
 - **Decision**: Prior to triggering any action, assess the action against available tools to choose the most token-efficient, fast, and direct execution path.
 - **Rationale**: Using the best-fit tool (dedicated search/edit/read/async primitives over shell commands or fragmented multi-step calls) preserves context window, eliminates round-trip latency, and prevents hallucination.
 
-
-
+### 7. Pure Native Android Jetpack Compose Architecture (v2.0.0)
+- **Decision**: The Android application is 100% pure native Kotlin with Jetpack Compose Material 3, eliminating WebView and Capacitor runtime.
+- **Rationale**: Provides zero-latency launch, 120Hz smooth scrolling, offline-first SQLite WAL persistence, and direct zero-hop synchronization between the home screen widget, quick-capture translucent modal, and the main application.

@@ -19,3 +19,4 @@ Tracks active durable goals, sprint objectives, and completed engineering milest
 | Dual-Layer Codebase Auto-Heal | 2026-09-06 | Implemented `--auto-heal` in `analyze.py` and relocated SQLite cache to `.agents/cache/codebase.db`. |
 | Skylos Gate Integration | 2026-09-06 | Integrated Skylos static analysis and AI hallucination checks into `.agents/scripts/checklist.py`. |
 | MCP Registry Cataloging | 2026-09-06 | Created `.agents/mcp-registry/INDEX.md` and 9 individual tool recipes in `.agents/mcp-registry/recipes/`. |
+| Pure Native Android Jetpack Compose Migration | 2026-10-18 | Re-engineered app from hybrid container to 100% pure native Kotlin + Compose + SQLite WAL (v2.0.0). |
